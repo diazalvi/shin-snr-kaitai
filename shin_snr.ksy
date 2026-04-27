@@ -642,11 +642,22 @@ types:
         type: operand
 
   payload_sget:
+    doc: |
+      0x81 CMD_SGET — read a system/state flag into a script variable.
+      dst_var_raw: s16 variable reference, always a var (never a literal).
+        The engine calls encodeVariableRef(raw) = raw + 0x8000 to obtain the
+        var_num stored in SGETData; var_idx below mirrors that.
+      flag_id_src: operand — the state-flag number to read (may be var or literal).
     seq:
-      - id: dst_var_ref
-        type: u2
+      - id: dst_var_raw
+        type: s2
+        doc: Raw wire word; always negative (< -0x4000), encoding a var index.
       - id: flag_id_src
-        type: u2
+        type: operand
+    instances:
+      dst_var_idx:
+        value: dst_var_raw + 0x8000
+        doc: Logical variable index after encodeVariableRef bias (matches SGETData.var_num).
 
   payload_sset:
     seq:

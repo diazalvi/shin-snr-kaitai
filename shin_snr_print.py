@@ -373,7 +373,10 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         return f"{name}  code={fmt_operand(p.exit_code_src)}"
 
     if oc == ShinSnr.OpCode.cmd_sget:
-        return f"{name}  dst={fmt_operand(p.dst_varfmt_operand)}  flag={fmt_operand(p.flag_id_src)}"
+        # dst_var_raw is always a variable reference; apply the same encodeVariableRef
+        # bias (+0x8000) that the engine uses so we display it as v<idx>.
+        dst = f"v{p.dst_var_raw + 0x8000}"
+        return f"{name}  dst={dst}  flag={fmt_operand(p.flag_id_src)}"
 
     if oc == ShinSnr.OpCode.cmd_sset:
         return f"{name}  value={fmt_operand(p.value_src)}  flag={fmt_operand(p.flag_id_src)}"
