@@ -686,7 +686,7 @@ types:
   payload_msgget:
     doc: |
       0x86 CMD_MSGGET.
-      packed_header: lower 24 bits = base_flag_idx+1; bit 24 = auto-advance.
+      packed_header: lower 24 bits = base_flag_idx+1; bit 24 = bool1.
       Followed by a Pascal-style (u8 length-prefixed) dialogue string.
     seq:
       - id: packed_header
@@ -698,7 +698,7 @@ types:
     instances:
       base_flag_idx:
         value: (packed_header & 0x00ffffff) - 1
-      auto_advance:
+      bool1:
         value: (packed_header >> 24) & 1
 
   payload_msgwait:
@@ -790,32 +790,32 @@ types:
     doc: "0x9C CMD_BGMPLAY — song_id, loop_count, volume_raw (0-255→/255.0f), fade_duration"
     seq:
       - id: song_id
-        type: u2
+        type: operand
       - id: loop_count
-        type: u2
+        type: operand
       - id: volume_raw
-        type: u2
+        type: operand
       - id: fade_duration
-        type: u2
+        type: operand
     instances:
       bgm_name:
-        value: _root.bgm_section.records[song_id].filename
-        if: song_id < _root.bgm_section.count
+        value: _root.bgm_section.records[song_id.value].filename
+        if: song_id.value < _root.bgm_section.count
       bgm_title:
-        value: _root.bgm_section.records[song_id].title
-        if: song_id < _root.bgm_section.count
+        value: _root.bgm_section.records[song_id.value].title
+        if: song_id.value < _root.bgm_section.count
 
   payload_bgm_stop:
     seq:
       - id: fade_duration
-        type: u2
+        type: operand
 
   payload_bgm_vol:
     seq:
       - id: volume_raw
-        type: u2
+        type: operand
       - id: fade_duration
-        type: u2
+        type: operand
 
   payload_bgm_wait:
     seq:
@@ -826,61 +826,61 @@ types:
     doc: "0xA0 CMD_SEPLAY — stream_id, se_id (→ se_bg_section), loop_count, volume_raw, fade_duration"
     seq:
       - id: stream_id
-        type: u2
+        type: operand
       - id: se_id
-        type: u2
+        type: operand
       - id: loop_count
-        type: u2
+        type: operand
       - id: volume_raw
-        type: u2
+        type: operand
       - id: fade_duration
-        type: u2
+        type: operand
     instances:
       se_name:
-        value: _root.se_bg_section.records[se_id].name
-        if: se_id < _root.se_bg_section.count
+        value: _root.se_bg_section.records[se_id.value].name
+        if: se_id.value < _root.se_bg_section.count
 
   payload_se_stop:
     seq:
       - id: stream_id
-        type: u2
+        type: operand
       - id: fade_duration
-        type: u2
+        type: operand
 
   payload_se_stop_all:
     seq:
       - id: fade_duration
-        type: u2
+        type: operand
 
   payload_se_vol:
     seq:
       - id: stream_id
-        type: u2
+        type: operand
       - id: volume_raw
-        type: u2
+        type: operand
       - id: fade_duration
-        type: u2
+        type: operand
 
   payload_se_wait:
     seq:
       - id: stream_id
-        type: u2
+        type: operand
       - id: do_preload
-        type: u2
+        type: operand
 
   payload_se_once:
     doc: "0xA5 CMD_SEONCE — sound_effect_id (→ se_bg_section), volume_raw, do_preload"
     seq:
       - id: sound_effect_id
-        type: u2
+        type: operand
       - id: volume_raw
-        type: u2
+        type: operand
       - id: do_preload
-        type: u2
+        type: operand
     instances:
       se_name:
-        value: _root.se_bg_section.records[sound_effect_id].name
-        if: sound_effect_id < _root.se_bg_section.count
+        value: _root.se_bg_section.records[sound_effect_id.value].name
+        if: sound_effect_id.value < _root.se_bg_section.count
 
   payload_vibrate:
     seq:

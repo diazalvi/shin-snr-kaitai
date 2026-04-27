@@ -163,7 +163,10 @@ def _choices_str(b) -> str:
 # =============================================================================
 
 def _vol(raw: int) -> str:
-    return f"{raw / 255 * 100:.1f}%"
+    if isinstance(raw, int):
+      return f"{raw / 255 * 100:.1f}%"
+    else:
+      return f"NaN"
 
 def fmt_operand(op) -> str:
     # 1. Handle the Kaitai 'operand' type
@@ -392,7 +395,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
 
     if oc == ShinSnr.OpCode.cmd_msgget:
         text = _str_msg(p.message_str) if p.message_size else ""
-        aa   = "  [auto-advance]" if p.auto_advance else ""
+        aa   = "  [bool1]" if p.bool1 else ""
         return f'{name}  flag_base={p.base_flag_idx}{aa}  "{text}"'
 
     if oc == ShinSnr.OpCode.cmd_msgwait:
@@ -425,39 +428,40 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
 
     # ── Audio ─────────────────────────────────────────────────────────────────
     if oc == ShinSnr.OpCode.cmd_bgmplay:
-        return (f"{name}  [{p.song_id}] {_bgm_name(snr, p.song_id)}"
-                f"  loop={fmt_operand(p.loop_count)}  vol={_vol(p.volume_raw)}"
-                f"  fade={p.fade_duration}")
+        return (f"{name}  [{fmt_operand(p.song_id)}] {_bgm_name(snr, p.song_id.value)}"
+                f"  loop={fmt_operand(p.loop_count)}  vol={_vol(p.volume_raw.value)}"
+                f"  fade={fmt_operand(p.fade_duration)}")
 
     if oc == ShinSnr.OpCode.cmd_bgmstop:
-        return f"{name}  fade={p.fade_duration}"
+        return f"{name}  fade={fmt_operand(p.fade_duration)}"
 
     if oc == ShinSnr.OpCode.cmd_bgmvol:
-        return f"{name}  vol={_vol(p.volume_raw)}  fade={p.fade_duration}"
+        return f"{name}  vol={_vol(p.volume_raw.value)}  fade={fmt_operand(p.fade_duration)}"
+
 
     if oc == ShinSnr.OpCode.cmd_bgmwait:
         return f"{name}  duration={fmt_operand(p.duration_src)}"
 
     if oc == ShinSnr.OpCode.cmd_seplay:
-        return (f"{name}  stream={p.stream_id}  [{p.se_id}] {_sebg_name(snr, p.se_id)}"
-                f"  loop={fmt_operand(p.loop_count)}  vol={_vol(p.volume_raw)}"
-                f"  fade={p.fade_duration}")
+        return (f"{name}  stream={fmt_operand(p.stream_id)}  [{fmt_operand(p.se_id)}] {_sebg_name(snr, p.se_id.value)}"
+                f"  loop={fmt_operand(p.loop_count)}  vol={_vol(p.volume_raw.value)}"
+                f"  fade={fmt_operand(p.fade_duration)}")
 
     if oc == ShinSnr.OpCode.cmd_sestop:
-        return f"{name}  stream={p.stream_id}  fade={p.fade_duration}"
+        return f"{name}  stream={fmt_operand(p.stream_id)} fade={fmt_operand(p.fade_duration)}"
 
     if oc == ShinSnr.OpCode.cmd_sestopall:
-        return f"{name}  fade={p.fade_duration}"
+        return f"{name}  fade={fmt_operand(p.fade_duration)}"
 
     if oc == ShinSnr.OpCode.cmd_sevol:
-        return f"{name}  stream={p.stream_id}  vol={_vol(p.volume_raw)}  fade={p.fade_duration}"
+        return f"{name}  stream={fmt_operand(p.stream_id)}  vol={_vol(p.volume_raw.value)}  fade={fmt_operand(p.fade_duration)}"
 
     if oc == ShinSnr.OpCode.cmd_sewait:
-        return f"{name}  stream={p.stream_id}  preload={p.do_preload}"
+        return f"{name}  stream={fmt_operand(p.stream_id)}  preload={fmt_operand(p.do_preload)}"
 
     if oc == ShinSnr.OpCode.cmd_seonce:
-        return (f"{name}  [{p.sound_effect_id}] {_sebg_name(snr, p.sound_effect_id)}"
-                f"  vol={_vol(p.volume_raw)}  preload={p.do_preload}")
+        return (f"{name}  [{fmt_operand(p.sound_effect_id)}] {_sebg_name(snr, p.sound_effect_id.value)}"
+                f"  vol={_vol(p.volume_raw.value)}  preload={fmt_operand(p.do_preload)}")
 
     if oc == ShinSnr.OpCode.cmd_vibrate:
         return f"{name}  intensity={p.vibration_intensity}  ticks={p.duration_ticks}"
@@ -479,7 +483,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
                 f"  crossfade={p.crossfade_delay}")
 
     if oc == ShinSnr.OpCode.cmd_bgmvol2:
-        return f"{name}  vol={_vol(p.volume_raw)}  fade={p.fade_duration}"
+        return f"{name}  vol={_vol(p.volume_raw.value)}  fade={fmt_operand(p.fade_duration)}"
 
     if oc == ShinSnr.OpCode.cmd_voiceplay:
         return (f"{name}  stream={p.stream_id}  [{p.voice_id}] {_voice_name(snr, p.voice_id)}"
