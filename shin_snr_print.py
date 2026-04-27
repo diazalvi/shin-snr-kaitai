@@ -407,9 +407,11 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
     if oc == ShinSnr.OpCode.cmd_select:
         title   = _str_msg(p.title_str) if p.title_len else ""
         choices = _choices_str(p.choices) if p.choices_len else ""
+        vm = p.visibility_bitmask
+        visible = f"{vm.value:#06x}" if not vm.is_var else fmt_operand(vm)
         return (f'{name}  flag_base={p.choice_base_flag_idc}'
-                f'  flag_id={p.flag_base_id}  dst=var[{p.script_var_num}]'
-                f'  visible={p.visibility_bitmask:#06x}'
+                f'  flag_id=v{p.flag_base_raw}  dst={fmt_operand(p.script_var_num)}'
+                f'  visible={visible}'
                 f'  title="{title}"  choices=[{choices}]')
 
     if oc == ShinSnr.OpCode.cmd_wipe:

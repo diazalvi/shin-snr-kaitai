@@ -662,26 +662,26 @@ types:
   payload_sset:
     seq:
       - id: value_src
-        type: u2
+        type: operand
       - id: flag_id_src
-        type: u2
+        type: operand
 
   payload_wait:
     seq:
       - id: duration_src
-        type: u2
+        type: operand
 
   payload_waitkey:
     seq:
       - id: mode_src
-        type: u2
+        type: operand
 
   payload_msginit:
     seq:
       - id: window_type_src
-        type: u2
+        type: operand
       - id: justify_src
-        type: u2
+        type: operand
 
   payload_msgget:
     doc: |
@@ -704,7 +704,7 @@ types:
   payload_msgwait:
     seq:
       - id: mode_src
-        type: u2
+        type: operand
 
   # 0x88 CMD_MSGSIGNAL — no payload
   # 0x89 CMD_MSGCLOSE  — no payload
@@ -735,12 +735,12 @@ types:
     seq:
       - id: choice_base_flag_idc
         type: u2
-      - id: flag_base_id
+      - id: flag_base_raw
         type: u2
       - id: script_var_num
-        type: u2
+        type: operand
       - id: visibility_bitmask
-        type: u2
+        type: operand
       - id: title_len
         type: u1
       - id: title_str
@@ -749,6 +749,10 @@ types:
         type: u1
       - id: choices
         size: choices_len
+    instances:
+      flag_base_id:
+        value: flag_base_raw + 0x8000 - 1
+        doc: Logical variable index after encodeVariableRef bias (matches SGETData.var_num).
 
   payload_wipe:
     doc: |
