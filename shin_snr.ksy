@@ -467,25 +467,56 @@ types:
 
   payload_alu:
     doc: |
-      0x41 OP_ALU — mode:u8.
-      Binary (mode < 0x80): dst_var OP op2
-      Ternary (mode >= 0x80): dst_var = op2 OP op3
+      0x41 OP_ALU — mode:u8, dst_var:s16, src_a:s16, [src_b:s16 if ternary].
+
+      Wire layout (always present): mode(u8)  dst_var(s16)  src_a(s16)
+      Optional fourth word:         src_b(s16)  — only when is_ternary.
+
+      Encoding:
+        mode bit 7 clear → Binary  format: result = dst_var_resolved  OP src_a_resolved
+        mode bit 7 set   → Ternary format: result = src_a_resolved    OP src_b_resolved
+
+      In both cases the result is written to the variable identified by dst_var
+      via setVar(dst_var, result) — dst_var is the RAW operand word (a var-ref),
+      NOT resolved through resolveOperand.
+
+      Operations (base_op = mode & 0x7F):
+        0x00  ASSIGN  result = src_a                (binary only; sets dst = resolved src_a)
+        0x01  MOV     result = dst_var_resolved      (binary only; src_a not present)
+        0x02  ADD     result = lhs + rhs
+        0x03  SUB     result = lhs - rhs
+        0x04  MUL     result = lhs * rhs
+        0x05  DIV     result = (s16)lhs / (s16)rhs
+        0x06  MOD     result = lhs - (lhs/rhs)*rhs   (signed)
+        0x07  AND     result = lhs & rhs
+        0x08  OR      result = lhs | rhs
+        0x09  XOR     result = lhs ^ rhs
+        0x0A  SHL     result = lhs << (rhs & 0x3F)
+        0x0B  SHR     result = (s16)lhs >> (rhs & 0x3F)
     seq:
       - id: mode
         type: u1
       - id: dst_var
         type: operand
+        doc: |
+          Always the destination: passed raw (as index) to setVar().
+          In binary mode it is also the first ALU input (lhs = resolveOperand(dst_var)).
+      - id: op1
+        type: operand
+        doc: |
+          Binary mode: second ALU input (rhs)
+          Ternary mode: first ALU input (lhs); always present.
       - id: op2
         type: operand
-        if: base_op != 1
-      - id: op3
-        type: operand
-        if: is_ternary and base_op != 1
+        doc: "Ternary mode only: second ALU input (rhs)."
+        if: (mode & 0x80) != 0
     instances:
       base_op:
         value: mode & 0x7f
+        doc: "Operation selector (low 7 bits of mode)."
       is_ternary:
-        value: mode >= 0x80
+        value: (mode & 0x80) != 0
+        doc: "true → ternary format; false → binary format."
 
   # OP_STACK (0x42) requires reading s8 opcodes until a negative terminator,
   # which Kaitai cannot express with a fixed repeat-until on a signed byte
@@ -885,9 +916,9 @@ types:
   payload_vibrate:
     seq:
       - id: vibration_intensity
-        type: u2
+        type: operand
       - id: duration_ticks
-        type: u2
+        type: operand
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Payload types — Misc (0xB0–0xBD)
@@ -969,7 +1000,7 @@ types:
   payload_voice_wait:
     seq:
       - id: wait_flags
-        type: u2
+        type: operand
 
   payload_tipsget:
     doc: "0xBD CMD_TIPSGET — count:u8, then count*u16 tip operand IDs (→ tips_section)"
@@ -977,7 +1008,7 @@ types:
       - id: count
         type: u1
       - id: operands
-        type: u2
+        type: operand
         repeat: expr
         repeat-expr: count
 
@@ -988,14 +1019,14 @@ types:
   payload_thropy:
     seq:
       - id: thropy_id
-        type: u2
+        type: operand
 
   payload_char:
     seq:
       - id: num_entries
-        type: u2
+        type: operand
       - id: unnamed_operand
-        type: u2
+        type: operand
 
   # 0xC0 CMD_LAYERCLEAR — no payload
 
@@ -1075,9 +1106,9 @@ types:
   payload_layer_wait:
     seq:
       - id: layer_id
-        type: u2
+        type: operand
       - id: anim_type
-        type: u2
+        type: operand
 
   payload_mask_load:
     doc: "0xC4 CMD_MASKLOAD — param0 (→ mask_section), param1"

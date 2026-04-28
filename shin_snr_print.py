@@ -275,8 +275,8 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
 
     # ── Logic / Memory ────────────────────────────────────────────────────────
     if oc == ShinSnr.OpCode.op_unary:
-        op2 = f"  op2={fmt_operand(p.op2)}" if p.mode >= 0x80 else ""
-        return f"{name}  mode={p.mode:#04x}  op1={fmt_operand(p.op1)}{op2}"
+        op1 = f"  op1={fmt_operand(p.op1)}" if p.mode >= 0x80 else ""
+        return f"{name}  mode={p.mode:#04x}  op1={fmt_operand(p.op1)}{op1}"
 
     if oc == ShinSnr.OpCode.op_alu:
         dst = fmt_operand(p.dst_var)
@@ -292,17 +292,17 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         }
         op_str = op_chars.get(p.base_op, f"?{p.base_op}?")
 
-        op2 = fmt_operand(p.op2)
+        op1 = fmt_operand(p.op1)
 
         if p.is_ternary:
-          op3 = fmt_operand(p.op3)
+          op2 = fmt_operand(p.op2)
           if p.base_op == 0:
-            return f"{name}  {dst} = {op2}  (unused: {op3})"
-          return f"{name}  {dst} = {op2} {op_str} {op3}"
+            return f"{name}  {dst} = {op1}  (unused: {op2})"
+          return f"{name}  {dst} = {op1} {op_str} {op2}"
         else:
-          if p.base_op == 0: # Direct assignment
-            return f"{name}  {dst} = {op2}"
-          return f"{name}  {dst} {op_str}= {op2}"
+          if p.base_op == 0: # direct assignment
+            return f"{name}  {dst} = {op1}"
+          return f"{name}  {dst} {op_str}= {op1}"
 
     if oc == ShinSnr.OpCode.op_stack:
         ops_str = " ".join(
@@ -464,7 +464,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
                 f"  vol={_vol(p.volume_raw.value)}  preload={fmt_operand(p.do_preload)}")
 
     if oc == ShinSnr.OpCode.cmd_vibrate:
-        return f"{name}  intensity={p.vibration_intensity}  ticks={p.duration_ticks}"
+        return f"{name}  intensity={fmt_operand(p.vibration_intensity)}  ticks={fmt_operand(p.duration_ticks)}"
 
     # ── Misc ──────────────────────────────────────────────────────────────────
     if oc == ShinSnr.OpCode.cmd_saveinfo:
@@ -491,18 +491,18 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
                 f"  fade={p.fade_duration}")
 
     if oc == ShinSnr.OpCode.cmd_voicewait:
-        return f"{name}  wait_flags={p.wait_flags:#06x}"
+        return f"{name}  wait_flags={p.wait_flags.value:#06x}"
 
     if oc == ShinSnr.OpCode.cmd_tipsget:
-        ids = ", ".join(str(v) for v in p.operands)
+        ids = ", ".join(str(fmt_operand(v)) for v in p.operands)
         return f"{name}  count={p.count}  ids=[{ids}]"
 
     # ── Layer / Canvas / Screen ───────────────────────────────────────────────
     if oc == ShinSnr.OpCode.cmd_thropy:
-        return f"{name}  id={p.thropy_id}"
+        return f"{name}  id={fmt_operand(p.thropy_id)}"
 
     if oc == ShinSnr.OpCode.cmd_char:
-        return f"{name}  num_entries={p.num_entries}  op={p.unnamed_operand}"
+        return f"{name}  num_entries={fmt_operand(p.num_entries)}  op={fmt_operand(p.unnamed_operand)}"
 
     if oc == ShinSnr.OpCode.cmd_layerload:
         lt_val = p.layer_type.value if hasattr(p.layer_type, 'value') else int(p.layer_type)
@@ -529,7 +529,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         return f"{name}  " + "  ".join(parts)
 
     if oc == ShinSnr.OpCode.cmd_layerwait:
-        return f"{name}  layer={p.layer_id}  anim_type={p.anim_type}"
+        return f"{name}  layer={fmt_operand(p.layer_id)}  anim_type={fmt_operand(p.anim_type)}"
 
     if oc == ShinSnr.OpCode.cmd_maskload:
         return f"{name}  [{p.param0}] {_mask_name(snr, p.param0)}  param1={p.param1}"
