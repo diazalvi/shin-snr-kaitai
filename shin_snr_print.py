@@ -195,7 +195,7 @@ def fmt_operand(op) -> str:
 
 def _bgm_name(snr: ShinSnr, idx: int) -> str:
     sec = snr.bgm_section
-    if idx < sec.count:
+    if idx < sec.num_records:
         r     = sec.records[idx]
         title = _strz(r.title)
         fn    = _strz(r.filename)
@@ -204,20 +204,20 @@ def _bgm_name(snr: ShinSnr, idx: int) -> str:
 
 def _sebg_name(snr: ShinSnr, idx: int) -> str:
     sec = snr.se_bg_section
-    return _strz(sec.records[idx].name) if idx < sec.count else f"se#{idx}"
+    return _strz(sec.records[idx].name) if idx < sec.num_records else f"se#{idx}"
 
 def _voice_name(snr: ShinSnr, idx: int) -> str:
     sec = snr.voice_section
-    return _strz(sec.records[idx].filename) if idx < sec.count else f"voice#{idx}"
+    return _strz(sec.records[idx].filename) if idx < sec.num_records else f"voice#{idx}"
 
 def _movie_name(snr: ShinSnr, idx: int) -> str:
     sec = snr.movie_section
-    return _strz(sec.records[idx].name) if idx < sec.count else f"movie#{idx}"
+    return _strz(sec.records[idx].name) if idx < sec.num_records else f"movie#{idx}"
 
 def _mask_name(snr: ShinSnr, idx: int) -> str:
     if isinstance(idx, int):
       sec = snr.mask_section
-      return _strz(sec.records[idx].name) if idx < sec.count else f"mask#{idx}"
+      return _strz(sec.records[idx].name) if idx < sec.num_records else f"mask#{idx}"
     else: 
       return idx
 
@@ -225,24 +225,24 @@ def fmt_mask(snr: ShinSnr, idx: int) -> str:
     if idx.value > -0x4000:
       idx = idx.value
       sec = snr.mask_section
-      return _strz(sec.records[idx].name) if idx < sec.count else f"mask#{idx}"
+      return _strz(sec.records[idx].name) if idx < sec.num_records else f"mask#{idx}"
     else: 
       return fmt_operand(idx)
 
 def _pic_name(snr: ShinSnr, idx: int) -> str:
     sec = snr.pic_section
-    return _strz(sec.records[idx].name) if idx < sec.count else f"pic#{idx}"
+    return _strz(sec.records[idx].name) if idx < sec.num_records else f"pic#{idx}"
 
 def _bustup_str(snr: ShinSnr, idx: int) -> str:
     sec = snr.bustup_section
-    if idx < sec.count:
+    if idx < sec.num_records:
         r = sec.records[idx]
         return f"{_strz(r.name)}/{_strz(r.emotion)}"
     return f"bustup#{idx}"
 
 def _anime_name(snr: ShinSnr, idx: int) -> str:
     sec = snr.anime_section
-    return _strz(sec.records[idx].name) if idx < sec.count else f"anime#{idx}"
+    return _strz(sec.records[idx].name) if idx < sec.num_records else f"anime#{idx}"
 
 _LAYER_TYPE_NAMES = {1:"TILE", 2:"PICTURE", 3:"BUSTUP", 4:"ANIME", 5:"RAIN", 6:"EFFECT"}
 
@@ -394,7 +394,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         return f"{name}  window_type={fmt_operand(p.window_type_src)}  justify={fmt_operand(p.justify_src)}"
 
     if oc == ShinSnr.OpCode.cmd_msgget:
-        text = _str_msg(p.message_str) if p.message_size else ""
+        text = _str_msg(p.message_str) if p.len_message_str else ""
         aa   = "  [bool1]" if p.bool1 else ""
         return f'{name}  flag_base={p.base_flag_idx}{aa}  "{text}"'
 
@@ -408,8 +408,8 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         return f'{name}  "{_str_msg(p.log_str)}"'
 
     if oc == ShinSnr.OpCode.cmd_select:
-        title   = _str_msg(p.title_str) if p.title_len else ""
-        choices = _choices_str(p.choices) if p.choices_len else ""
+        title   = _str_msg(p.title_str) if p.len_title_str else ""
+        choices = _choices_str(p.choices) if p.len_choices else ""
         vm = p.visibility_bitmask
         visible = f"{vm.value:#06x}" if not vm.is_var else fmt_operand(vm)
         return (f'{name}  flag_base={p.choice_base_flag_idc}'
@@ -429,7 +429,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
     # ── Audio ─────────────────────────────────────────────────────────────────
     if oc == ShinSnr.OpCode.cmd_bgmplay:
         return (f"{name}  [{fmt_operand(p.song_id)}] {_bgm_name(snr, p.song_id.value)}"
-                f"  loop={fmt_operand(p.loop_count)}  vol={_vol(p.volume_raw.value)}"
+                f"  loop={fmt_operand(p.loop_num_records)}  vol={_vol(p.volume_raw.value)}"
                 f"  fade={fmt_operand(p.fade_duration)}")
 
     if oc == ShinSnr.OpCode.cmd_bgmstop:
@@ -444,7 +444,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
 
     if oc == ShinSnr.OpCode.cmd_seplay:
         return (f"{name}  stream={fmt_operand(p.stream_id)}  [{fmt_operand(p.se_id)}] {_sebg_name(snr, p.se_id.value)}"
-                f"  loop={fmt_operand(p.loop_count)}  vol={_vol(p.volume_raw.value)}"
+                f"  loop={fmt_operand(p.loop_num_records)}  vol={_vol(p.volume_raw.value)}"
                 f"  fade={fmt_operand(p.fade_duration)}")
 
     if oc == ShinSnr.OpCode.cmd_sestop:
@@ -479,7 +479,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
     if oc == ShinSnr.OpCode.cmd_bgmplay2:
         return (f"{name}  new=[{p.new_song_id}] {_bgm_name(snr, p.new_song_id)}"
                 f"  old=[{p.old_song_id}] {_bgm_name(snr, p.old_song_id)}"
-                f"  loop={fmt_operand(p.loop_count)}  vol={_vol(p.volume_raw)}"
+                f"  loop={fmt_operand(p.loop_num_records)}  vol={_vol(p.volume_raw)}"
                 f"  crossfade={p.crossfade_delay}")
 
     if oc == ShinSnr.OpCode.cmd_bgmvol2:
@@ -487,7 +487,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
 
     if oc == ShinSnr.OpCode.cmd_voiceplay:
         return (f"{name}  stream={p.stream_id}  [{p.voice_id}] {_voice_name(snr, p.voice_id)}"
-                f"  loop={fmt_operand(p.loop_count)}  vol={_vol(p.volume_raw)}"
+                f"  loop={fmt_operand(p.loop_num_records)}  vol={_vol(p.volume_raw)}"
                 f"  fade={p.fade_duration}")
 
     if oc == ShinSnr.OpCode.cmd_voicewait:
@@ -495,7 +495,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
 
     if oc == ShinSnr.OpCode.cmd_tipsget:
         ids = ", ".join(str(fmt_operand(v)) for v in p.operands)
-        return f"{name}  count={p.count}  ids=[{ids}]"
+        return f"{name} .num_operands={p.num_operands}  ids=[{ids}]"
 
     # ── Layer / Canvas / Screen ───────────────────────────────────────────────
     if oc == ShinSnr.OpCode.cmd_thropy:
@@ -532,22 +532,22 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         return f"{name}  layer={fmt_operand(p.layer_id)}  anim_type={fmt_operand(p.anim_type)}"
 
     if oc == ShinSnr.OpCode.cmd_maskload:
-        return f"{name}  [{p.param0}] {_mask_name(snr, p.param0)}  param1={p.param1}"
+        return f"{name}  [{fmt_operand(p.mask_id)}] {_mask_name(snr, p.mask_id.value)}  bool1={fmt_operand(p.bool1)}"
 
     if oc == ShinSnr.OpCode.cmd_canvas:
-        return f"{name}  canvas_id={p.canvas_id}"
+        return f"{name}  canvas_id={fmt_operand(p.canvas_id)}"
 
     if oc == ShinSnr.OpCode.cmd_canvasctrl:
-        parts = [f"n={p.num_entries}", f"mask={p.field_mask:#04x}"]
+        parts = [f"n={fmt_operand(p.num_entries)}", f"mask={p.field_mask:#04x}"]
         for i, (bit, attr) in enumerate([
                 (0x01,'param0'),(0x02,'param1'),(0x04,'param2'),(0x08,'param3'),
                 (0x10,'param4'),(0x20,'param5'),(0x40,'param6'),(0x80,'param7')]):
             if p.field_mask & bit:
-                parts.append(f"p{i}={getattr(p, attr)}")
+                parts.append(f"p{i}={fmt_operand(getattr(p, attr))}")
         return f"{name}  " + "  ".join(parts)
 
     if oc == ShinSnr.OpCode.cmd_canvaswait:
-        return f"{name}  param0={p.param0}"
+        return f"{name}  param0={fmt_operand(p.param0)}"
 
     if oc == ShinSnr.OpCode.cmd_screenctr:
         parts = [f"canvas={p.canvas_id}", f"mask={p.field_mask:#04x}"]
@@ -559,7 +559,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         return f"{name}  " + "  ".join(parts)
 
     if oc == ShinSnr.OpCode.cmd_screenwait:
-        return f"{name}  anim_type={p.anim_type}"
+        return f"{name}  anim_type={fmt_operand(p.anim_type)}"
 
     # ── Debug / Utility ───────────────────────────────────────────────────────
     if oc == ShinSnr.OpCode.cmd_msgbox:
@@ -639,14 +639,14 @@ def main():
     print(f"SNR file      : {path}  ({len(data)} bytes)")
     print(f"bytecode off  : {snr.header.off_bytecode:#010x}")
     print(f"sjis decode   : {'on (half-width kana expanded)' if _DECODE_SJIS else 'off (raw)'}")
-    print(f"BGM tracks    : {snr.bgm_section.count}")
-    print(f"SE/bg sounds  : {snr.se_bg_section.count}")
-    print(f"Voice clips   : {snr.voice_section.count}")
-    print(f"Movies        : {snr.movie_section.count}")
-    print(f"Masks         : {snr.mask_section.count}")
-    print(f"Pictures      : {snr.pic_section.count}")
-    print(f"Bustup sprites: {snr.bustup_section.count}")
-    print(f"Anime clips   : {snr.anime_section.count}")
+    print(f"BGM tracks    : {snr.bgm_section.num_records}")
+    print(f"SE/bg sounds  : {snr.se_bg_section.num_records}")
+    print(f"Voice clips   : {snr.voice_section.num_records}")
+    print(f"Movies        : {snr.movie_section.num_records}")
+    print(f"Masks         : {snr.mask_section.num_records}")
+    print(f"Pictures      : {snr.pic_section.num_records}")
+    print(f"Bustup sprites: {snr.bustup_section.num_records}")
+    print(f"Anime clips   : {snr.anime_section.num_records}")
 
     if show_assets:
         print_asset_tables(snr)

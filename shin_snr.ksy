@@ -126,12 +126,12 @@ types:
 
   bgm_section:
     seq:
-      - id: count
+      - id: num_records
         type: u4
       - id: records
         type: bgm_record
         repeat: expr
-        repeat-expr: count
+        repeat-expr: num_records
   bgm_record:
     seq:
       - id: filename
@@ -141,12 +141,12 @@ types:
 
   se_bg_section:
     seq:
-      - id: count
+      - id: num_records
         type: u4
       - id: records
         type: se_bg_record
         repeat: expr
-        repeat-expr: count
+        repeat-expr: num_records
   se_bg_record:
     seq:
       - id: name
@@ -154,12 +154,12 @@ types:
 
   voice_section:
     seq:
-      - id: count
+      - id: num_records
         type: u4
       - id: records
         type: voice_record
         repeat: expr
-        repeat-expr: count
+        repeat-expr: num_records
   voice_record:
     seq:
       - id: filename
@@ -171,12 +171,12 @@ types:
 
   movie_section:
     seq:
-      - id: count
+      - id: num_records
         type: u4
       - id: records
         type: movie_record
         repeat: expr
-        repeat-expr: count
+        repeat-expr: num_records
       - id: pad
         size: 2
   movie_record:
@@ -186,12 +186,12 @@ types:
 
   mask_section:
     seq:
-      - id: count
+      - id: num_records
         type: u4
       - id: records
         type: mask_record
         repeat: expr
-        repeat-expr: count
+        repeat-expr: num_records
   mask_record:
     seq:
       - id: name
@@ -199,12 +199,12 @@ types:
 
   pic_section:
     seq:
-      - id: count
+      - id: num_records
         type: u4
       - id: records
         type: pic_record
         repeat: expr
-        repeat-expr: count
+        repeat-expr: num_records
   pic_record:
     seq:
       - id: name
@@ -212,12 +212,12 @@ types:
 
   bustup_section:
     seq:
-      - id: count
+      - id: num_records
         type: u4
       - id: records
         type: bustup_record
         repeat: expr
-        repeat-expr: count
+        repeat-expr: num_records
   bustup_record:
     seq:
       - id: name
@@ -227,12 +227,12 @@ types:
 
   anime_section:
     seq:
-      - id: count
+      - id: num_records
         type: u4
       - id: records
         type: anime_record
         repeat: expr
-        repeat-expr: count
+        repeat-expr: num_records
   anime_record:
     seq:
       - id: name
@@ -240,31 +240,31 @@ types:
 
   picturebox_section:
     seq:
-      - id: count
+      - id: num_records
         type: u4
       - id: records
         type: picturebox_record
         repeat: expr
-        repeat-expr: count
+        repeat-expr: num_records
   picturebox_record:
     seq:
-      - id: values_count
+      - id: num_values
         type: u1
       - id: type
         type: u1
       - id: values
         type: u2
         repeat: expr
-        repeat-expr: values_count
+        repeat-expr: num_values
 
   musicbox_section:
     seq:
-      - id: count
+      - id: num_records
         type: u4
       - id: records
         type: musicbox_record
         repeat: expr
-        repeat-expr: count
+        repeat-expr: num_records
   musicbox_record:
     seq:
       - id: data
@@ -272,12 +272,12 @@ types:
 
   tips_section:
     seq:
-      - id: count
+      - id: num_tips
         type: u4
       - id: tips
         type: tips_entry
         repeat: expr
-        repeat-expr: count
+        repeat-expr: num_tips
   tips_entry:
     seq:
       - id: props
@@ -292,12 +292,12 @@ types:
 
   chars_section:
     seq:
-      - id: count
+      - id: num_entries
         type: u4
       - id: entries
         type: char_entry
         repeat: expr
-        repeat-expr: count
+        repeat-expr: num_entries
       - id: pad
         size: 2
   char_entry:
@@ -305,10 +305,10 @@ types:
       - id: props
         type: u2
       - id: body
-        size: body_size
+        size: len_body
         type: char_body
     instances:
-      body_size:
+      len_body:
         value: (props & 0x0fff) - 2
 
   char_body:
@@ -346,12 +346,12 @@ types:
 
   charflags_section:
     seq:
-      - id: count
+      - id: num_entries
         type: u4
       - id: entries
         type: charflags_entry
         repeat: expr
-        repeat-expr: count
+        repeat-expr: num_entries
       - id: pad
         size: 2
   charflags_entry:
@@ -548,16 +548,16 @@ types:
         value: op_code < 0
 
   payload_set_vars_mult_range:
-    doc: "0x43 SET_VARS_MULT_RANGE — value_src:u16, count:u8, var_idx[count]:u16"
+    doc: "0x43 SET_VARS_MULT_RANGE — value_src:u16, num_records:u8, var_idx[num_records]:u16"
     seq:
       - id: value_src
         type: operand
-      - id: count
+      - id: num_var_idx
         type: u1
       - id: var_idx
         type: u2
         repeat: expr
-        repeat-expr: count
+        repeat-expr: num_var_idx
 
   payload_set_var_from_array:
     doc: "0x44 SET_VAR_FROM_ARRAY — dst_var:u16, index_src:u16, table_size:u8, table_data[table_size]:u16"
@@ -566,12 +566,12 @@ types:
         type: u2
       - id: index_src
         type: operand
-      - id: table_size
+      - id: num_table_data
         type: u1
       - id: table_data
         type: u2
         repeat: expr
-        repeat-expr: table_size
+        repeat-expr: num_table_data
 
   payload_set_vars_mult_array:
     doc: "0x45 SET_VARS_MULT_ARRAY — value_src:u16, index_src:u16, table_size:u8, var_index_table[table_size]:u16"
@@ -580,12 +580,12 @@ types:
         type: operand
       - id: index_src
         type: operand
-      - id: table_size
+      - id: num_var_index_table
         type: u1
       - id: var_index_table
         type: u2
         repeat: expr
-        repeat-expr: table_size
+        repeat-expr: num_var_index_table
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Payload types — Flow Control (0x46–0x4B)
@@ -622,12 +622,12 @@ types:
     seq:
       - id: index_src
         type: operand
-      - id: table_size
+      - id: num_entries
         type: u2
       - id: entries
         type: u4
         repeat: expr
-        repeat-expr: table_size
+        repeat-expr: num_entries
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Payload types — Utilities (0x4C–0x4E)
@@ -644,24 +644,24 @@ types:
         type: u2
 
   payload_push_mult:
-    doc: "0x4D PUSH_MULT — count:u8, operands[count]:u16"
+    doc: "0x4D PUSH_MULT — num_records:u8, operands[num_records]:u16"
     seq:
-      - id: count
+      - id: num_operands
         type: u1
       - id: operands
         type: operand
         repeat: expr
-        repeat-expr: count
+        repeat-expr: num_operands
 
   payload_pop_mult:
-    doc: "0x4E POP_MULT — count:u8, var_idx[count]:u16"
+    doc: "0x4E POP_MULT — num_records:u8, var_idx[num_records]:u16"
     seq:
-      - id: count
+      - id: num_var_idx
         type: u1
       - id: var_idx
         type: operand
         repeat: expr
-        repeat-expr: count
+        repeat-expr: num_var_idx
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Payload types — System / Message / Scene (0x80–0x8E)
@@ -722,10 +722,10 @@ types:
     seq:
       - id: packed_header
         type: u4
-      - id: message_size
+      - id: len_message_str
         type: u2
       - id: message_str
-        size: message_size 
+        size: len_message_str
     instances:
       base_flag_idx:
         value: (packed_header & 0x00ffffff) - 1
@@ -752,10 +752,10 @@ types:
   payload_logset:
     doc: "0x8B CMD_LOGSET — null-terminated inline string"
     seq:
-      - id: log_size
+      - id: len_log_str
         type: u2
       - id: log_str
-        size: log_size 
+        size: len_log_str
 
   payload_select:
     doc: |
@@ -772,14 +772,14 @@ types:
         type: operand
       - id: visibility_bitmask
         type: operand
-      - id: title_len
+      - id: len_title_str
         type: u1
       - id: title_str
-        size: title_len
-      - id: choices_len
+        size: len_title_str
+      - id: len_choices
         type: u1
       - id: choices
-        size: choices_len
+        size: len_choices
     instances:
       flag_base_id:
         value: flag_base_raw + 0x8000 - 1
@@ -818,11 +818,11 @@ types:
 # ═══════════════════════════════════════════════════════════════════════════
 
   payload_bgm_play:
-    doc: "0x9C CMD_BGMPLAY — song_id, loop_count, volume_raw (0-255→/255.0f), fade_duration"
+    doc: "0x9C CMD_BGMPLAY — song_id, loop_num_records, volume_raw (0-255→/255.0f), fade_duration"
     seq:
       - id: song_id
         type: operand
-      - id: loop_count
+      - id: loop_num_records
         type: operand
       - id: volume_raw
         type: operand
@@ -831,10 +831,10 @@ types:
     instances:
       bgm_name:
         value: _root.bgm_section.records[song_id.value].filename
-        if: song_id.value < _root.bgm_section.count
+        if: song_id.value < _root.bgm_section.num_records
       bgm_title:
         value: _root.bgm_section.records[song_id.value].title
-        if: song_id.value < _root.bgm_section.count
+        if: song_id.value < _root.bgm_section.num_records
 
   payload_bgm_stop:
     seq:
@@ -854,13 +854,13 @@ types:
         type: u2
 
   payload_se_play:
-    doc: "0xA0 CMD_SEPLAY — stream_id, se_id (→ se_bg_section), loop_count, volume_raw, fade_duration"
+    doc: "0xA0 CMD_SEPLAY — stream_id, se_id (→ se_bg_section), loop_num_records, volume_raw, fade_duration"
     seq:
       - id: stream_id
         type: operand
       - id: se_id
         type: operand
-      - id: loop_count
+      - id: loop_num_records
         type: operand
       - id: volume_raw
         type: operand
@@ -869,7 +869,7 @@ types:
     instances:
       se_name:
         value: _root.se_bg_section.records[se_id.value].name
-        if: se_id.value < _root.se_bg_section.count
+        if: se_id.value < _root.se_bg_section.num_records
 
   payload_se_stop:
     seq:
@@ -911,7 +911,7 @@ types:
     instances:
       se_name:
         value: _root.se_bg_section.records[sound_effect_id.value].name
-        if: sound_effect_id.value < _root.se_bg_section.count
+        if: sound_effect_id.value < _root.se_bg_section.num_records
 
   payload_vibrate:
     seq:
@@ -940,7 +940,7 @@ types:
     instances:
       movie_name:
         value: _root.movie_section.records[movie_id].name
-        if: movie_id < _root.movie_section.count
+        if: movie_id < _root.movie_section.num_records
 
   payload_bgm_sync:
     seq:
@@ -952,13 +952,13 @@ types:
   # 0xB6 CMD_AUTOSAVE — no payload
 
   payload_bgm_play2:
-    doc: "0xB7 CMD_BGMPLAY2 — new_song_id, old_song_id (both → bgm_section), loop_count, volume_raw, crossfade_delay"
+    doc: "0xB7 CMD_BGMPLAY2 — new_song_id, old_song_id (both → bgm_section), loop_num_records, volume_raw, crossfade_delay"
     seq:
       - id: new_song_id
         type: u2
       - id: old_song_id
         type: u2
-      - id: loop_count
+      - id: loop_num_records
         type: u2
       - id: volume_raw
         type: u2
@@ -967,10 +967,10 @@ types:
     instances:
       new_bgm_name:
         value: _root.bgm_section.records[new_song_id].filename
-        if: new_song_id < _root.bgm_section.count
+        if: new_song_id < _root.bgm_section.num_records
       old_bgm_name:
         value: _root.bgm_section.records[old_song_id].filename
-        if: old_song_id < _root.bgm_section.count
+        if: old_song_id < _root.bgm_section.num_records
 
   payload_bgm_vol2:
     seq:
@@ -980,13 +980,13 @@ types:
         type: u2
 
   payload_voice_play:
-    doc: "0xB9 CMD_VOICEPLAY — stream_id, voice_id (→ voice_section), loop_count, volume_raw, fade_duration"
+    doc: "0xB9 CMD_VOICEPLAY — stream_id, voice_id (→ voice_section), loop_num_records, volume_raw, fade_duration"
     seq:
       - id: stream_id
         type: u2
       - id: voice_id
         type: u2
-      - id: loop_count
+      - id: loop_num_records
         type: u2
       - id: volume_raw
         type: u2
@@ -995,7 +995,7 @@ types:
     instances:
       voice_name:
         value: _root.voice_section.records[voice_id].filename
-        if: voice_id < _root.voice_section.count
+        if: voice_id < _root.voice_section.num_records
 
   payload_voice_wait:
     seq:
@@ -1003,14 +1003,14 @@ types:
         type: operand
 
   payload_tipsget:
-    doc: "0xBD CMD_TIPSGET — count:u8, then count*u16 tip operand IDs (→ tips_section)"
+    doc: "0xBD CMD_TIPSGET — num_records:u8, then num_records*u16 tip operand IDs (→ tips_section)"
     seq:
-      - id: count
+      - id: num_operands
         type: u1
       - id: operands
         type: operand
         repeat: expr
-        repeat-expr: count
+        repeat-expr: num_operands
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Payload types — Layer / Canvas / Screen (0xBE–0xCB)
@@ -1111,21 +1111,21 @@ types:
         type: operand
 
   payload_mask_load:
-    doc: "0xC4 CMD_MASKLOAD — param0 (→ mask_section), param1"
+    doc: "0xC4 CMD_MASKLOAD — mask_id (→ mask_section), param1"
     seq:
-      - id: param0
-        type: u2
-      - id: param1
-        type: u2
+      - id: mask_id
+        type: operand
+      - id: bool1
+        type: operand
     instances:
       mask_name:
-        value: _root.mask_section.records[param0].name
-        if: param0 < _root.mask_section.count
+        value: _root.mask_section.records[mask_id.value].name
+        if: mask_id.value < _root.mask_section.num_records
 
   payload_canvas:
     seq:
       - id: canvas_id
-        type: u2
+        type: operand
 
   # 0xC6 CMD_CANVASINIT — no payload
 
@@ -1133,38 +1133,38 @@ types:
     doc: "0xC7 CMD_CANVASCTRL — num_entries:u16, field_mask:u8, 0–8 optional InterpolatorStep u16 words"
     seq:
       - id: num_entries
-        type: u2
+        type: operand
       - id: field_mask
         type: u1
       - id: param0
-        type: u2
+        type: operand
         if: (field_mask & 0x01) != 0
       - id: param1
-        type: u2
+        type: operand
         if: (field_mask & 0x02) != 0
       - id: param2
-        type: u2
+        type: operand
         if: (field_mask & 0x04) != 0
       - id: param3
-        type: u2
+        type: operand
         if: (field_mask & 0x08) != 0
       - id: param4
-        type: u2
+        type: operand
         if: (field_mask & 0x10) != 0
       - id: param5
-        type: u2
+        type: operand
         if: (field_mask & 0x20) != 0
       - id: param6
-        type: u2
+        type: operand
         if: (field_mask & 0x40) != 0
       - id: param7
-        type: u2
+        type: operand
         if: (field_mask & 0x80) != 0
 
   payload_canvas_wait:
     seq:
       - id: param0
-        type: u2
+        type: operand
 
   # 0xC9 CMD_SCREENINIT — no payload
 
@@ -1203,7 +1203,7 @@ types:
   payload_screen_wait:
     seq:
       - id: anim_type
-        type: u2
+        type: operand
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Payload types — Debug / Utility (0xF0–0xF1)
@@ -1212,18 +1212,18 @@ types:
   payload_msgbox:
     doc: "0xF0 CMD_MSGBOX — str8: u8 length prefix + string body"
     seq:
-      - id: len
+      - id: len_message
         type: u1
       - id: message
-        size: len
+        size: len_message
 
   payload_snapshot:
     doc: "0xF1 CMD_SNAPSHOT — str8 filename_base, index:u16; output: <base>_%05d.bmp"
     seq:
-      - id: len
+      - id: len_filename_base
         type: u1
       - id: filename_base
-        size: len
+        size: len_filename_base
       - id: index
         type: u2
 
