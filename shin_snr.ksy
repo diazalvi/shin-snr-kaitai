@@ -84,6 +84,9 @@ types:
       value:
         value: raw
         if: not is_var
+      value_layer_type:
+        value: raw
+        enum: layer_type
   snr_header:
     seq:
       - id: magic
@@ -1038,69 +1041,68 @@ types:
       asset_id (bit 0) is cross-referenced to the section implied by layer_type.
     seq:
       - id: layer_id
-        type: u2
+        type: operand
       - id: layer_type
-        type: u2
-        enum: layer_type
+        type: operand
       - id: field_mask
         type: u1
       - id: asset_id
-        type: u2
+        type: operand
         if: (field_mask & 0x01) != 0
       - id: paramb
-        type: u2
+        type: operand
         if: (field_mask & 0x02) != 0
       - id: width
-        type: u2
+        type: operand
         if: (field_mask & 0x04) != 0
       - id: height
-        type: u2
+        type: operand
         if: (field_mask & 0x08) != 0
       - id: x
-        type: u2
+        type: operand
         if: (field_mask & 0x10) != 0
       - id: y
-        type: u2
+        type: operand
         if: (field_mask & 0x20) != 0
       - id: paramc
-        type: u2
+        type: operand
         if: (field_mask & 0x40) != 0
       - id: paramd
-        type: u2
+        type: operand
         if: (field_mask & 0x80) != 0
 
   payload_layer_ctrl:
     doc: "0xC2 CMD_LAYERCTRL — structurally identical to LAYERLOAD but no layer_type; i1 purpose TBD."
     seq:
       - id: layer_id
-        type: u2
+        type: operand
       - id: i1
-        type: u2
+        type: operand
       - id: field_mask
         type: u1
       - id: param0
-        type: u2
+        type: operand
         if: (field_mask & 0x01) != 0
       - id: param1
-        type: u2
+        type: operand
         if: (field_mask & 0x02) != 0
       - id: param2
-        type: u2
+        type: operand
         if: (field_mask & 0x04) != 0
       - id: param3
-        type: u2
+        type: operand
         if: (field_mask & 0x08) != 0
       - id: param4
-        type: u2
+        type: operand
         if: (field_mask & 0x10) != 0
       - id: param5
-        type: u2
+        type: operand
         if: (field_mask & 0x20) != 0
       - id: param6
-        type: u2
+        type: operand
         if: (field_mask & 0x40) != 0
       - id: param7
-        type: u2
+        type: operand
         if: (field_mask & 0x80) != 0
 
   payload_layer_wait:
@@ -1225,7 +1227,7 @@ types:
       - id: filename_base
         size: len_filename_base
       - id: index
-        type: u2
+        type: operand
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Enums

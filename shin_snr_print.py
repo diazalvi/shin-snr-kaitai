@@ -505,27 +505,27 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         return f"{name}  num_entries={fmt_operand(p.num_entries)}  op={fmt_operand(p.unnamed_operand)}"
 
     if oc == ShinSnr.OpCode.cmd_layerload:
-        lt_val = p.layer_type.value if hasattr(p.layer_type, 'value') else int(p.layer_type)
+        lt_val = p.layer_type.value_layer_type if hasattr(p.layer_type, 'value_layer_type') else int(p.layer_type)
         lt_str = _LAYER_TYPE_NAMES.get(lt_val, f"type={lt_val}")
-        parts  = [f"layer={p.layer_id}", lt_str, f"mask={p.field_mask:#04x}"]
+        parts  = [f"layer={fmt_operand(p.layer_id)}", lt_str, f"mask={p.field_mask:#04x}"]
         if p.field_mask & 0x01:
-            parts.append(f"asset=[{p.asset_id}] {_layer_asset(snr, lt_val, p.asset_id)}")
-        if p.field_mask & 0x02: parts.append(f"paramb={p.paramb}")
-        if p.field_mask & 0x04: parts.append(f"w={p.width}")
-        if p.field_mask & 0x08: parts.append(f"h={p.height}")
-        if p.field_mask & 0x10: parts.append(f"x={p.x}")
-        if p.field_mask & 0x20: parts.append(f"y={p.y}")
-        if p.field_mask & 0x40: parts.append(f"paramc={p.paramc}")
-        if p.field_mask & 0x80: parts.append(f"paramd={p.paramd}")
+            parts.append(f"asset=[{fmt_operand(p.asset_id)}] {_layer_asset(snr, lt_val, p.asset_id.value)}")
+        if p.field_mask & 0x02: parts.append(f"paramb={fmt_operand(p.paramb)}")
+        if p.field_mask & 0x04: parts.append(f"w={fmt_operand(p.width)}")
+        if p.field_mask & 0x08: parts.append(f"h={fmt_operand(p.height)}")
+        if p.field_mask & 0x10: parts.append(f"x={fmt_operand(p.x)}")
+        if p.field_mask & 0x20: parts.append(f"y={fmt_operand(p.y)}")
+        if p.field_mask & 0x40: parts.append(f"paramc={fmt_operand(p.paramc)}")
+        if p.field_mask & 0x80: parts.append(f"paramd={fmt_operand(p.paramd)}")
         return f"{name}  " + "  ".join(parts)
 
     if oc == ShinSnr.OpCode.cmd_layerctrl:
-        parts = [f"layer={p.layer_id}", f"i1={p.i1}", f"mask={p.field_mask:#04x}"]
+        parts = [f"layer={fmt_operand(p.layer_id)}", f"i1={fmt_operand(p.i1)}", f"mask={p.field_mask:#04x}"]
         for i, (bit, attr) in enumerate([
                 (0x01,'param0'),(0x02,'param1'),(0x04,'param2'),(0x08,'param3'),
                 (0x10,'param4'),(0x20,'param5'),(0x40,'param6'),(0x80,'param7')]):
             if p.field_mask & bit:
-                parts.append(f"p{i}={getattr(p, attr)}")
+                parts.append(f"p{i}={fmt_operand(getattr(p, attr))}")
         return f"{name}  " + "  ".join(parts)
 
     if oc == ShinSnr.OpCode.cmd_layerwait:
@@ -566,7 +566,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         return f'{name}  "{_str_msg(p.message)}"'
 
     if oc == ShinSnr.OpCode.cmd_snapshot:
-        return f'{name}  "{_strz(p.filename_base)}"  index={p.index}'
+        return f'{name}  "{_strz(p.filename_base)}"  index={fmt_operand(p.index)}'
 
     # Fallback
     return f"{name}  (payload={type(p).__name__}  opcode={oc_val:#04x})"
