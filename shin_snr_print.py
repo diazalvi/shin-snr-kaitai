@@ -680,7 +680,9 @@ def main():
         try:
             line = fmt_instruction(snr, instr)
         except Exception as ex:
-            line = f"<ERROR: {ex}>"
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            line = f"<ERROR: {ex} {exc_type}, {fname}, {exc_tb.tb_lineno})"
 
         print(f"  {i:6d}  [{addr:#010x}]  {line}")
 
