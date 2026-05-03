@@ -246,7 +246,14 @@ def _anime_name(snr: ShinSnr, idx: int) -> str:
 
 _LAYER_TYPE_NAMES = {1:"TILE", 2:"PICTURE", 3:"BUSTUP", 4:"ANIME", 5:"RAIN", 6:"EFFECT"}
 
+def decode_decimal_rgba(encoded_int :int) -> tuple[int]:
+    s = f"{encoded_int:04d}"
+    rgba = [round((int(digit) / 9) * 255) for digit in s]
+    return tuple(rgba)
+
+
 def _layer_asset(snr: ShinSnr, lt: int, asset_id: int) -> str:
+    if lt == 1: return f"RGBA = {decode_decimal_rgba(asset_id)}"
     if lt == 2: return _pic_name(snr, asset_id)
     if lt == 3: return _bustup_str(snr, asset_id)
     if lt == 4: return _anime_name(snr, asset_id)
@@ -507,7 +514,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
     if oc == ShinSnr.OpCode.cmd_layerload:
         lt_val = p.layer_type.value_layer_type if hasattr(p.layer_type, 'value_layer_type') else int(p.layer_type)
         lt_str = _LAYER_TYPE_NAMES.get(lt_val, f"type={lt_val}")
-        parts  = [f"layer={fmt_operand(p.layer_id)}", lt_str, f"mask={p.field_mask:#04x}"]
+        parts  = [f"layer={fmt_operand(p.layer_id)}", lt_str, f"field_mask={p.field_mask:#04x}"]
         if p.field_mask & 0x01:
             parts.append(f"asset=[{fmt_operand(p.asset_id)}] {_layer_asset(snr, lt_val, p.asset_id.value)}")
         if p.field_mask & 0x02: parts.append(f"paramb={fmt_operand(p.paramb)}")
@@ -614,7 +621,7 @@ def print_asset_tables(snr: ShinSnr) -> None:
 
     section("Bustup")
     for i, r in enumerate(snr.bustup_section.records):
-        print(f" [{i:4d}]  {_strz(r.name):<26}  emotion={_strz(r.emotion)}")
+        print(f"[{i:4d}]  {_strz(r.name):<26}  emotion={_strz(r.emotion)}")
 
     section("Anime")
     for i, r in enumerate(snr.anime_section.records):
