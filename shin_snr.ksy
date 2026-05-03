@@ -211,7 +211,9 @@ types:
   pic_record:
     seq:
       - id: name
-        size: 0x1a
+        size: 0x18
+      - id: next_id
+        type: s2
 
   bustup_section:
     seq:

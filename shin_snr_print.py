@@ -604,11 +604,17 @@ def print_asset_tables(snr: ShinSnr) -> None:
 
     section("Picture")
     for i, r in enumerate(snr.pic_section.records):
-        print(f"  [{i:4d}]  {_strz(r.name)}")
+        print(f"  [{i:4d}]  {_strz(r.name)}", end="")
+        next_id = r.next_id
+        while next_id != -1:
+            next = snr.pic_section.records[next_id]
+            print(f" --> [{next_id:4d}] {_strz(next.name)}", end="")
+            next_id = next.next_id
+        print("")
 
     section("Bustup")
     for i, r in enumerate(snr.bustup_section.records):
-        print(f"  [{i:4d}]  {_strz(r.name):<26}  emotion={_strz(r.emotion)}")
+        print(f" [{i:4d}]  {_strz(r.name):<26}  emotion={_strz(r.emotion)}")
 
     section("Anime")
     for i, r in enumerate(snr.anime_section.records):
