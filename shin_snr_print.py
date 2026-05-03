@@ -246,6 +246,15 @@ def _anime_name(snr: ShinSnr, idx: int) -> str:
 
 _LAYER_TYPE_NAMES = {1:"TILE", 2:"PICTURE", 3:"BUSTUP", 4:"ANIME", 5:"RAIN", 6:"EFFECT"}
 
+def fmt_anim_type(op) -> str:
+    """Format an anim_type operand: show the enum name when it's a constant."""
+    if hasattr(op, 'is_var') and op.is_var:
+        return f"v{op.var_idx}"
+    try:
+        return op.value_anim_type.name
+    except Exception:
+        return fmt_operand(op)
+
 def decode_decimal_rgba(encoded_int :int) -> tuple[int, int, int, int]:
     s = f"{encoded_int:04d}"
     rgba = [round((int(digit) / 9) * 255) for digit in s]
@@ -527,7 +536,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         return f"{name}  " + "  ".join(parts)
 
     if oc == ShinSnr.OpCode.cmd_layerctrl:
-        parts = [f"layer={fmt_operand(p.layer_id)}", f"anim_type={fmt_operand(p.anim_type):3}", f"mask={p.field_mask:#04x}"]
+        parts = [f"layer={fmt_operand(p.layer_id)}", f"anim={fmt_anim_type(p.anim_type)}", f"mask={p.field_mask:#04x}"]
         for i, (bit, attr) in enumerate([
                 (0x01,'end_value'),(0x02,'duration_or_step'),(0x04,'mode_and_easing'),(0x08,'height'),
                 (0x10,'x'),(0x20,'y'),(0x40,'paramc'),(0x80,'paramd')]):
@@ -536,7 +545,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         return f"{name}  " + "  ".join(parts)
 
     if oc == ShinSnr.OpCode.cmd_layerwait:
-        return f"{name}  layer={fmt_operand(p.layer_id)}  anim_type={fmt_operand(p.anim_type)}"
+        return f"{name}  layer={fmt_operand(p.layer_id)}  anim={fmt_anim_type(p.anim_type)}"
 
     if oc == ShinSnr.OpCode.cmd_maskload:
         return f"{name}  [{fmt_operand(p.mask_id)}] {_mask_name(snr, p.mask_id.value)}  bool1={fmt_operand(p.bool1)}"
@@ -566,7 +575,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         return f"{name}  " + "  ".join(parts)
 
     if oc == ShinSnr.OpCode.cmd_screenwait:
-        return f"{name}  anim_type={fmt_operand(p.anim_type)}"
+        return f"{name}  anim={fmt_anim_type(p.anim_type)}"
 
     # ── Debug / Utility ───────────────────────────────────────────────────────
     if oc == ShinSnr.OpCode.cmd_msgbox:

@@ -87,6 +87,9 @@ types:
       value_layer_type:
         value: raw
         enum: layer_type
+      value_anim_type:
+        value: raw
+        enum: anim_type
   snr_header:
     seq:
       - id: magic
@@ -1313,6 +1316,48 @@ enums:
     0xf0: cmd_msgbox
     0xf1: cmd_snapshot
     # 0xF2–0xFF: scriptTrue stubs
+
+  anim_type:
+    0x00: gradientb
+    0x01: fade_alpha
+    0x02: fade_blue
+    0x03: fade_green
+    0x04: fade_red
+    0x05: image_filter
+    0x06: blend_mode
+    0x07: st2c_a
+    0x08: st2c_b
+    0x09: pivot_x
+    0x0a: pivot_y
+    0x0b: scale_x
+    0x0c: scale_y
+    0x0d: rotation_z
+    0x0e: imagelayer_flip
+    0x0f: shake_amplitude
+    0x10: shake_duration
+    0x11: bob_amplitude
+    0x12: bob_duration
+    0x13: butsup_anim_byte
+    0x14: crain_2c1
+    0x15: crain_2c2
+    0x16: crain_2c3
+    0x17: crain_anim_uint
+    0x18: effect_2c0
+    0x19: effect_2c1
+    0x1a: effect_2c2
+    0x1b: effect_2c3
+    0x1c: effect_2c4
+    0x1d: effect_2c5
+    0x1e: effect_2c6
+    0x1f: effect_2c7
+    0x20: effect_2c8
+    0x21: effect_5_lerp
+    0x22: effect_2ca
+    0x23: breakup
+    0x24: effectlayer_flip
+    0x25: screen_anim_uint
+    0x26: screen_interpa
+    0x27: screen_interpb
 
   layer_type:
     0x01: layer_type_tile
