@@ -246,7 +246,7 @@ def _anime_name(snr: ShinSnr, idx: int) -> str:
 
 _LAYER_TYPE_NAMES = {1:"TILE", 2:"PICTURE", 3:"BUSTUP", 4:"ANIME", 5:"RAIN", 6:"EFFECT"}
 
-def decode_decimal_rgba(encoded_int :int) -> tuple[int]:
+def decode_decimal_rgba(encoded_int :int) -> tuple[int, int, int, int]:
     s = f"{encoded_int:04d}"
     rgba = [round((int(digit) / 9) * 255) for digit in s]
     return tuple(rgba)
@@ -527,12 +527,12 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         return f"{name}  " + "  ".join(parts)
 
     if oc == ShinSnr.OpCode.cmd_layerctrl:
-        parts = [f"layer={fmt_operand(p.layer_id)}", f"i1={fmt_operand(p.i1)}", f"mask={p.field_mask:#04x}"]
+        parts = [f"layer={fmt_operand(p.layer_id)}", f"anim_type={fmt_operand(p.anim_type):3}", f"mask={p.field_mask:#04x}"]
         for i, (bit, attr) in enumerate([
-                (0x01,'param0'),(0x02,'param1'),(0x04,'param2'),(0x08,'param3'),
-                (0x10,'param4'),(0x20,'param5'),(0x40,'param6'),(0x80,'param7')]):
+                (0x01,'end_value'),(0x02,'duration_or_step'),(0x04,'mode_and_easing'),(0x08,'height'),
+                (0x10,'x'),(0x20,'y'),(0x40,'paramc'),(0x80,'paramd')]):
             if p.field_mask & bit:
-                parts.append(f"p{i}={fmt_operand(getattr(p, attr))}")
+                parts.append(f"{attr}={fmt_operand(getattr(p, attr))}")
         return f"{name}  " + "  ".join(parts)
 
     if oc == ShinSnr.OpCode.cmd_layerwait:

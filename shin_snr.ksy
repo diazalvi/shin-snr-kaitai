@@ -1078,32 +1078,32 @@ types:
     seq:
       - id: layer_id
         type: operand
-      - id: i1
+      - id: anim_type
         type: operand
       - id: field_mask
         type: u1
-      - id: param0
+      - id: end_value
         type: operand
         if: (field_mask & 0x01) != 0
-      - id: param1
+      - id: duration_or_step
         type: operand
         if: (field_mask & 0x02) != 0
-      - id: param2
+      - id: mode_and_easing
         type: operand
         if: (field_mask & 0x04) != 0
-      - id: param3
+      - id: height
         type: operand
         if: (field_mask & 0x08) != 0
-      - id: param4
+      - id: x
         type: operand
         if: (field_mask & 0x10) != 0
-      - id: param5
+      - id: y
         type: operand
         if: (field_mask & 0x20) != 0
-      - id: param6
+      - id: paramc
         type: operand
         if: (field_mask & 0x40) != 0
-      - id: param7
+      - id: paramd
         type: operand
         if: (field_mask & 0x80) != 0
 
