@@ -1338,10 +1338,10 @@ enums:
     0x11: bob_amplitude
     0x12: bob_duration
     0x13: butsup_anim_byte
-    0x14: crain_2c1
-    0x15: crain_2c2
-    0x16: crain_2c3
-    0x17: crain_anim_uint
+    0x14: rain_particle_spawn_rate
+    0x15: rain_particle_size
+    0x16: rain_particle_rotation_z
+    0x17: rain_anim_paused
     0x18: effect_2c0
     0x19: effect_2c1
     0x1a: effect_2c2
