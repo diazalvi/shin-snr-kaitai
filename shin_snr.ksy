@@ -1338,9 +1338,10 @@ enums:
     0x11: bob_amplitude
     0x12: bob_duration
     0x13: butsup_anim_byte
-    0x14: rain_particle_spawn_rate
-    0x15: rain_particle_size
-    0x16: rain_particle_rotation_z
+    0x14: rain_particle_spawn_rate   # 0-1000, max 50 concurrent for raindrop, 5 for hanabira
+    0x15: rain_particle_size         # 0-1000, normalized to [0.0, 1.0] -> scale [0.0, 1.125] 
+    0x16: rain_particle_rotation_z   # 0-1000, normalized to [-1.0, 1.0] --> [-pi/3, pi/3] radians -> [-60º, 60º]
+                                     # with random values up to 66º raindrop, 88º hanabira
     0x17: rain_anim_paused
     0x18: effect_2c0
     0x19: effect_2c1
