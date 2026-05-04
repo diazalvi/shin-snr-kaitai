@@ -1343,8 +1343,8 @@ enums:
     0x16: rain_particle_rotation_z   # 0-1000, normalized to [-1.0, 1.0] --> [-pi/3, pi/3] radians -> [-60º, 60º]
                                      # with random values up to 66º raindrop, 88º hanabira
     0x17: rain_anim_paused
-    0x18: effect_2c0
-    0x19: effect_2c1
+    0x18: swirl_phase
+    0x19: swirl_strenght
     0x1a: effect_2c2
     0x1b: effect_2c3
     0x1c: effect_2c4
