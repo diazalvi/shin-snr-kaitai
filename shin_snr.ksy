@@ -1344,16 +1344,16 @@ enums:
                                      # with random values up to 66º raindrop, 88º hanabira
     0x17: rain_anim_paused
     0x18: swirl_phase
-    0x19: swirl_strenght
+    0x19: swirl_strength
     0x1a: effect_2c2
-    0x1b: effect_2c3
-    0x1c: effect_2c4
+    0x1b: ripple_x_offset
+    0x1c: ripple_x_strength
     0x1d: effect_2c5
-    0x1e: effect_2c6
-    0x1f: effect_2c7
+    0x1e: ripple_y_offset
+    0x1f: ripple_y_strength
     0x20: effect_2c8
     0x21: effect_5_lerp
-    0x22: effect_2ca
+    0x22: gaussian_blur_sigma        # multiplied by 0.001 and squared
     0x23: breakup
     0x24: effectlayer_flip
     0x25: screen_anim_uint
