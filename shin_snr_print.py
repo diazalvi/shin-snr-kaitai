@@ -545,7 +545,13 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         return f"{name}  " + "  ".join(parts)
 
     if oc == ShinSnr.OpCode.cmd_layerwait:
-        return f"{name}  layer={fmt_operand(p.layer_id)}  anim={fmt_anim_type(p.anim_type)}"
+        at = p.anim_type
+        if at.is_var:
+            at_str = fmt_operand(at)
+        else:
+            at_enum = at.value_layer_wait_anim_type
+            at_str = at_enum.name if hasattr(at_enum, 'name') else str(at.value)
+        return f"{name}  layer={fmt_operand(p.layer_id)}  anim_type={at_str}"
 
     if oc == ShinSnr.OpCode.cmd_maskload:
         return f"{name}  [{fmt_operand(p.mask_id)}] {_mask_name(snr, p.mask_id.value)}  bool1={fmt_operand(p.bool1)}"

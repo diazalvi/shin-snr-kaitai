@@ -90,6 +90,10 @@ types:
       value_anim_type:
         value: raw
         enum: anim_type
+      value_layer_wait_anim_type:
+        value: raw
+        enum: layer_wait_anim_type
+
   snr_header:
     seq:
       - id: magic
@@ -1367,3 +1371,39 @@ enums:
     0x04: layer_type_anime
     0x05: layer_type_rain
     0x06: layer_type_effect
+
+  layer_wait_anim_type:
+    0x00: gradient_b
+    0x01: alpha
+    0x02: blue
+    0x03: green
+    0x04: red
+    0x05: x_pos
+    0x06: y_pos
+    0x07: x_pivot
+    0x08: y_pivot
+    0x09: x_scale
+    0x0a: y_scale
+    0x0b: rotation_z
+    0x0c: shake_amplitude
+    0x0d: shake_duration
+    0x0e: bob_amplitude
+    0x0f: bob_duration
+    0x10: anime
+    0x11: rain_spawn_rate
+    0x12: rain_particle_size
+    0x13: rain_particle_rot_z
+    0x14: swirl_phase
+    0x15: swirl_strength
+    0x16: unk_2c2
+    0x17: ripple_x_offset
+    0x18: ripple_x_strength
+    0x19: unk_2c5
+    0x1a: ripple_y_offset
+    0x1b: ripple_y_strength
+    0x1c: unk_2c8
+    0x1d: unk_effect5
+    0x1e: gaussian_blur_sigma
+    0x1f: breakup
+    0x20: screen_interp_a
+    0x21: screen_interp_b
