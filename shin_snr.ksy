@@ -1342,21 +1342,21 @@ enums:
     0x11: bob_amplitude
     0x12: bob_duration
     0x13: butsup_anim_byte
-    0x14: rain_particle_spawn_rate   # 0-1000, max 50 concurrent for raindrop, 5 for hanabira
-    0x15: rain_particle_size         # 0-1000, normalized to [0.0, 1.0] -> scale [0.0, 1.125] 
-    0x16: rain_particle_rotation_z   # 0-1000, normalized to [-1.0, 1.0] --> [-pi/3, pi/3] radians -> [-60º, 60º]
+    0x14: rain_particle_spawn_rate   # Permille, max 50 concurrent for raindrop, 5 for hanabira
+    0x15: rain_particle_size         # Permille, normalized to [0.0, 1.0] -> scale [0.0, 1.125] 
+    0x16: rain_particle_rotation_z   # Permille, normalized to [-1.0, 1.0] --> [-pi/3, pi/3] radians -> [-60º, 60º]
                                      # with random values up to 66º raindrop, 88º hanabira
     0x17: rain_anim_paused
     0x18: swirl_phase
     0x19: swirl_strength
-    0x1a: effect_2c2
-    0x1b: ripple_x_offset
+    0x1a: swirl_shrink
+    0x1b: ripple_x_frequency
     0x1c: ripple_x_strength
-    0x1d: effect_2c5
-    0x1e: ripple_y_offset
+    0x1d: ripple_x_phase_delta
+    0x1e: ripple_y_frequency
     0x1f: ripple_y_strength
-    0x20: effect_2c8
-    0x21: effect_5_lerp
+    0x20: ripple_y_phase_delta
+    0x21: pixellate                  # size of the pixel blocks, must be >0
     0x22: gaussian_blur_sigma        # multiplied by 0.001 and squared
     0x23: breakup
     0x24: effectlayer_flip
@@ -1395,14 +1395,14 @@ enums:
     0x13: rain_particle_rot_z
     0x14: swirl_phase
     0x15: swirl_strength
-    0x16: unk_2c2
-    0x17: ripple_x_offset
+    0x16: swirl_shrink
+    0x17: ripple_x_frequency
     0x18: ripple_x_strength
-    0x19: unk_2c5
+    0x19: ripple_x_phase_delta
     0x1a: ripple_y_offset
     0x1b: ripple_y_strength
-    0x1c: unk_2c8
-    0x1d: unk_effect5
+    0x1c: ripple_y_phase_delta
+    0x1d: pixellate
     0x1e: gaussian_blur_sigma
     0x1f: breakup
     0x20: screen_interp_a
