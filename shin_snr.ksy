@@ -1141,9 +1141,9 @@ types:
   # 0xC6 CMD_CANVASINIT — no payload
 
   payload_canvas_ctrl:
-    doc: "0xC7 CMD_CANVASCTRL — num_entries:u16, field_mask:u8, 0–8 optional InterpolatorStep u16 words"
+    doc: "0xC7 CMD_CANVASCTRL — anim_type:u16, field_mask:u8, 0–8 optional InterpolatorStep operand words"
     seq:
-      - id: num_entries
+      - id: anim_type
         type: operand
       - id: field_mask
         type: u1
@@ -1174,41 +1174,41 @@ types:
 
   payload_canvas_wait:
     seq:
-      - id: param0
+      - id: anim_type
         type: operand
 
   # 0xC9 CMD_SCREENINIT — no payload
 
   payload_screen_ctrl:
-    doc: "0xCA CMD_SCREENCTR — canvas_id:u16, field_mask:u8, 0–8 optional u16 data words"
+    doc: "0xCA CMD_SCREENCTR — anim_type:u16, field_mask:u8, 0–8 optional operand data words"
     seq:
-      - id: canvas_id
-        type: u2
+      - id: anim_type
+        type: operand
       - id: field_mask
         type: u1
       - id: param0
-        type: u2
+        type: operand
         if: (field_mask & 0x01) != 0
       - id: param1
-        type: u2
+        type: operand
         if: (field_mask & 0x02) != 0
       - id: param2
-        type: u2
+        type: operand
         if: (field_mask & 0x04) != 0
       - id: param3
-        type: u2
+        type: operand
         if: (field_mask & 0x08) != 0
       - id: param4
-        type: u2
+        type: operand
         if: (field_mask & 0x10) != 0
       - id: param5
-        type: u2
+        type: operand
         if: (field_mask & 0x20) != 0
       - id: param6
-        type: u2
+        type: operand
         if: (field_mask & 0x40) != 0
       - id: param7
-        type: u2
+        type: operand
         if: (field_mask & 0x80) != 0
 
   payload_screen_wait:
@@ -1322,7 +1322,7 @@ enums:
     # 0xF2–0xFF: scriptTrue stubs
 
   anim_type:
-    0x00: gradientb
+    0x00: z_order                    # used solely to determine layer stable ordering in canvas drawing
     0x01: fade_alpha
     0x02: fade_blue
     0x03: fade_green
@@ -1345,7 +1345,7 @@ enums:
     0x14: rain_particle_spawn_rate   # Permille, max 50 concurrent for raindrop, 5 for hanabira
     0x15: rain_particle_size         # Permille, normalized to [0.0, 1.0] -> scale [0.0, 1.125] 
     0x16: rain_particle_rotation_z   # Permille, normalized to [-1.0, 1.0] --> [-pi/3, pi/3] radians -> [-60º, 60º]
-                                     # with random values up to 66º raindrop, 88º hanabira
+                                     #   with random values up to 66º raindrop, 88º hanabira
     0x17: rain_anim_paused
     0x18: swirl_phase
     0x19: swirl_strength
@@ -1360,9 +1360,10 @@ enums:
     0x22: gaussian_blur_sigma        # multiplied by 0.001 and squared
     0x23: breakup
     0x24: effectlayer_flip
-    0x25: screen_anim_uint
-    0x26: screen_interpa
-    0x27: screen_interpb
+    0x25: screen_oscillator_enabled
+    0x26: screen_freeze_zoom         # Permille, zoom screen freeze buffer into fugue 
+                                     #   point at the center for transitions 1000 = full screen, 0 = point
+    0x27: screen_freeze_alpha        # 0-255 direct alpha of the freeze screen buffer
 
   layer_type:
     0x01: layer_type_tile
@@ -1373,7 +1374,7 @@ enums:
     0x06: layer_type_effect
 
   layer_wait_anim_type:
-    0x00: gradient_b
+    0x00: z_order
     0x01: alpha
     0x02: blue
     0x03: green
@@ -1405,5 +1406,5 @@ enums:
     0x1d: pixellate
     0x1e: gaussian_blur_sigma
     0x1f: breakup
-    0x20: screen_interp_a
-    0x21: screen_interp_b
+    0x20: screen_freeze_zoom
+    0x21: screen_freeze_alpha

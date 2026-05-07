@@ -255,6 +255,15 @@ def fmt_anim_type(op) -> str:
     except Exception:
         return fmt_operand(op)
 
+def fmt_wait_anim_type(op) -> str:
+    """Format a wait anim_type operand using the layer_wait_anim_type enum."""
+    if hasattr(op, 'is_var') and op.is_var:
+        return f"v{op.var_idx}"
+    try:
+        return op.value_layer_wait_anim_type.name
+    except Exception:
+        return fmt_operand(op)
+
 def decode_decimal_rgba(encoded_int :int) -> tuple[int, int, int, int]:
     s = f"{encoded_int:04d}"
     rgba = [round((int(digit) / 9) * 255) for digit in s]
@@ -545,13 +554,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         return f"{name}  " + "  ".join(parts)
 
     if oc == ShinSnr.OpCode.cmd_layerwait:
-        at = p.anim_type
-        if at.is_var:
-            at_str = fmt_operand(at)
-        else:
-            at_enum = at.value_layer_wait_anim_type
-            at_str = at_enum.name if hasattr(at_enum, 'name') else str(at.value)
-        return f"{name}  layer={fmt_operand(p.layer_id)}  anim_type={at_str}"
+        return f"{name}  layer={fmt_operand(p.layer_id)}  anim_type={fmt_wait_anim_type(p.anim_type)}"
 
     if oc == ShinSnr.OpCode.cmd_maskload:
         return f"{name}  [{fmt_operand(p.mask_id)}] {_mask_name(snr, p.mask_id.value)}  bool1={fmt_operand(p.bool1)}"
@@ -560,7 +563,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         return f"{name}  canvas_id={fmt_operand(p.canvas_id)}"
 
     if oc == ShinSnr.OpCode.cmd_canvasctrl:
-        parts = [f"n={fmt_operand(p.num_entries)}", f"mask={p.field_mask:#04x}"]
+        parts = [f"anim={fmt_anim_type(p.anim_type)}", f"mask={p.field_mask:#04x}"]
         for i, (bit, attr) in enumerate([
                 (0x01,'param0'),(0x02,'param1'),(0x04,'param2'),(0x08,'param3'),
                 (0x10,'param4'),(0x20,'param5'),(0x40,'param6'),(0x80,'param7')]):
@@ -569,19 +572,19 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         return f"{name}  " + "  ".join(parts)
 
     if oc == ShinSnr.OpCode.cmd_canvaswait:
-        return f"{name}  param0={fmt_operand(p.param0)}"
+        return f"{name}  anim={fmt_wait_anim_type(p.anim_type)}"
 
     if oc == ShinSnr.OpCode.cmd_screenctr:
-        parts = [f"canvas={p.canvas_id}", f"mask={p.field_mask:#04x}"]
+        parts = [f"anim={fmt_anim_type(p.anim_type)}", f"mask={p.field_mask:#04x}"]
         for i, (bit, attr) in enumerate([
                 (0x01,'param0'),(0x02,'param1'),(0x04,'param2'),(0x08,'param3'),
                 (0x10,'param4'),(0x20,'param5'),(0x40,'param6'),(0x80,'param7')]):
             if p.field_mask & bit:
-                parts.append(f"p{i}={getattr(p, attr)}")
+                parts.append(f"p{i}={fmt_operand(getattr(p, attr))}")
         return f"{name}  " + "  ".join(parts)
 
     if oc == ShinSnr.OpCode.cmd_screenwait:
-        return f"{name}  anim={fmt_anim_type(p.anim_type)}"
+        return f"{name}  anim={fmt_wait_anim_type(p.anim_type)}"
 
     # ── Debug / Utility ───────────────────────────────────────────────────────
     if oc == ShinSnr.OpCode.cmd_msgbox:
