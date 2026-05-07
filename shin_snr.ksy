@@ -1329,8 +1329,8 @@ enums:
     0x04: fade_red
     0x05: image_filter
     0x06: blend_mode
-    0x07: st2c_a
-    0x08: st2c_b
+    0x07: x_pos
+    0x08: y_pos
     0x09: pivot_x
     0x0a: pivot_y
     0x0b: scale_x
@@ -1341,7 +1341,7 @@ enums:
     0x10: shake_duration
     0x11: bob_amplitude
     0x12: bob_duration
-    0x13: butsup_anim_byte
+    0x13: butsup_lipsync_enable
     0x14: rain_particle_spawn_rate   # Permille, max 50 concurrent for raindrop, 5 for hanabira
     0x15: rain_particle_size         # Permille, normalized to [0.0, 1.0] -> scale [0.0, 1.125] 
     0x16: rain_particle_rotation_z   # Permille, normalized to [-1.0, 1.0] --> [-pi/3, pi/3] radians -> [-60º, 60º]
