@@ -645,6 +645,11 @@ def print_asset_tables(snr: ShinSnr) -> None:
     for i, r in enumerate(snr.anime_section.records):
         print(f"  [{i:4d}]  {_strz(r.name)}")
 
+    section("Picturebox")
+    for i, r in enumerate(snr.picturebox_section.pages):
+        pics = "  ".join(f"[{v}] {_pic_name(snr, v)}" for v in r.values)
+        print(f"  [page {i:3d}]  type={r.type}  {pics}")
+
 
 # =============================================================================
 # Main
@@ -678,6 +683,7 @@ def main():
     print(f"Pictures      : {snr.pic_section.num_records}")
     print(f"Bustup sprites: {snr.bustup_section.num_records}")
     print(f"Anime clips   : {snr.anime_section.num_records}")
+    print(f"Picturebox pgs: {snr.picturebox_section.num_pages}")
 
     if show_assets:
         print_asset_tables(snr)

@@ -252,13 +252,13 @@ types:
 
   picturebox_section:
     seq:
-      - id: num_records
+      - id: num_pages
         type: u4
-      - id: records
-        type: picturebox_record
+      - id: pages
+        type: picturebox_page
         repeat: expr
-        repeat-expr: num_records
-  picturebox_record:
+        repeat-expr: num_pages
+  picturebox_page:
     seq:
       - id: num_values
         type: u1
@@ -268,6 +268,7 @@ types:
         type: u2
         repeat: expr
         repeat-expr: num_values
+        doc: indexes into pic_section.records; resolved to names via pic_names instance
 
   musicbox_section:
     seq:
