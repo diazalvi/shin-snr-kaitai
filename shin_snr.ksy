@@ -252,13 +252,13 @@ types:
 
   picturebox_section:
     seq:
-      - id: num_pages
+      - id: num_cg_entries
         type: u4
-      - id: pages
-        type: picturebox_page
+      - id: cg_entries
+        type: picturebox_cg_entry
         repeat: expr
-        repeat-expr: num_pages
-  picturebox_page:
+        repeat-expr: num_cg_entries
+  picturebox_cg_entry:
     seq:
       - id: num_values
         type: u1
