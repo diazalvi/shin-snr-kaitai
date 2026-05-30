@@ -251,6 +251,10 @@ types:
         size: 0x24
 
   picturebox_section:
+    doc: |
+      CG gallery table.  Each entry is one CG gallery item referencing
+      one or more pic_section records.  Follow pic_record.next_id chains
+      to enumerate all picture variants belonging to the same CG.
     seq:
       - id: num_cg_entries
         type: u4
@@ -259,6 +263,10 @@ types:
         repeat: expr
         repeat-expr: num_cg_entries
   picturebox_cg_entry:
+    doc: |
+      Single CG gallery entry.  `values` are head indices into
+      pic_section.records; each head may start a next_id linked list
+      of variant pictures for that CG slot.
     seq:
       - id: num_values
         type: u1
@@ -268,7 +276,7 @@ types:
         type: u2
         repeat: expr
         repeat-expr: num_values
-        doc: indexes into pic_section.records; resolved to names via pic_names instance
+        doc: Head indexes into pic_section.records; follow next_id for variant chains.
 
   musicbox_section:
     seq:

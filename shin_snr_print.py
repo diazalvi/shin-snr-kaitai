@@ -645,10 +645,19 @@ def print_asset_tables(snr: ShinSnr) -> None:
     for i, r in enumerate(snr.anime_section.records):
         print(f"  [{i:4d}]  {_strz(r.name)}")
 
-    section("Picturebox")
+    section("CG Gallery (Picturebox)")
     for i, r in enumerate(snr.picturebox_section.cg_entries):
-        pics = "  ".join(f"[{v}] {_pic_name(snr, v)}" for v in r.values)
-        print(f"  [cg_entry {i:3d}]  type={r.type}  {pics}")
+        parts = []
+        for v in r.values:
+            chain = [_pic_name(snr, v)]
+            if v < snr.pic_section.num_records:
+                nid = snr.pic_section.records[v].next_id
+                while nid != -1 and nid < snr.pic_section.num_records:
+                    chain.append(_pic_name(snr, nid))
+                    nid = snr.pic_section.records[nid].next_id
+            parts.append(" -> ".join(chain))
+        pics_str = "  |  ".join(parts)
+        print(f"  [cg {i:3d}]  type={r.type}  {pics_str}")
 
 
 # =============================================================================
@@ -683,7 +692,7 @@ def main():
     print(f"Pictures      : {snr.pic_section.num_records}")
     print(f"Bustup sprites: {snr.bustup_section.num_records}")
     print(f"Anime clips   : {snr.anime_section.num_records}")
-    print(f"Picturebox CGs: {snr.picturebox_section.num_cg_entries}")
+    print(f"CG gallery     : {snr.picturebox_section.num_cg_entries}")
 
     if show_assets:
         print_asset_tables(snr)
