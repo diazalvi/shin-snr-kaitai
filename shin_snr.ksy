@@ -93,6 +93,12 @@ types:
       value_layer_wait_anim_type:
         value: raw
         enum: layer_wait_anim_type
+      value_justification:
+        value: raw
+        enum: justification
+      value_msg_style:
+        value: raw
+        enum: msg_style
 
   snr_header:
     seq:
@@ -730,9 +736,10 @@ types:
 
   payload_msginit:
     seq:
-      - id: window_type_src
+      - id: msg_style
         type: operand
-      - id: justify_src
+        doc: "Text presentation style: 0 = ADV (textbox), 1 = NVL (fullscreen)."
+      - id: justification
         type: operand
 
   payload_msgget:
@@ -1381,6 +1388,15 @@ enums:
     0x04: layer_type_anime
     0x05: layer_type_rain
     0x06: layer_type_effect
+
+  msg_style:
+    0: adv
+    1: nvl
+
+  justification:
+    0: line_left_justify
+    2: line_center_align
+    3: line_right_justify
 
   layer_wait_anim_type:
     0x00: z_order

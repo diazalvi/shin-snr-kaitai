@@ -416,7 +416,22 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         return f"{name}  mode={fmt_operand(p.mode_src)}"
 
     if oc == ShinSnr.OpCode.cmd_msginit:
-        return f"{name}  window_type={fmt_operand(p.window_type_src)}  justify={fmt_operand(p.justify_src)}"
+        if hasattr(p.msg_style, 'is_var') and p.msg_style.is_var:
+            style_str = f"v{p.msg_style.var_idx}"
+        else:
+            try:
+                style_str = p.msg_style.value_msg_style.name.upper()
+            except Exception:
+                style_str = fmt_operand(p.msg_style)
+        just = p.justification
+        if hasattr(just, 'is_var') and just.is_var:
+            just_str = f"v{just.var_idx}"
+        else:
+            try:
+                just_str = just.value_justification.name
+            except Exception:
+                just_str = fmt_operand(just)
+        return f"{name}  style={style_str}  justify={just_str}"
 
     if oc == ShinSnr.OpCode.cmd_msgget:
         text = _str_msg(p.message_str) if p.len_message_str else ""
