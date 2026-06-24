@@ -542,7 +542,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         return f"{name}  id={fmt_operand(p.thropy_id)}"
 
     if oc == ShinSnr.OpCode.cmd_char:
-        return f"{name}  num_entries={fmt_operand(p.num_entries)}  op={fmt_operand(p.unnamed_operand)}"
+        return f"{name}  char_tree_snapshot={fmt_operand(p.char_tree_snapshot)}  starting_page={fmt_operand(p.starting_page)}"
 
     if oc == ShinSnr.OpCode.cmd_layerload:
         lt_val = p.layer_type.value_layer_type if hasattr(p.layer_type, 'value_layer_type') else int(p.layer_type)

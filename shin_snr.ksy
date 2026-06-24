@@ -1051,10 +1051,12 @@ types:
 
   payload_char:
     seq:
-      - id: num_entries
+      - id: char_tree_snapshot
         type: operand
-      - id: unnamed_operand
+        doc: Char tree snapshot description index.
+      - id: starting_page
         type: operand
+        doc: Starting page for the char display tree.
 
   # 0xC0 CMD_LAYERCLEAR — no payload
 
