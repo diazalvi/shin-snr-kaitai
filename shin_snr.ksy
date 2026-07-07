@@ -745,7 +745,7 @@ types:
   payload_msgget:
     doc: |
       0x86 CMD_MSGGET.
-      packed_header: lower 24 bits = base_flag_idx+1; bit 24 = bool1.
+      packed_header: lower 24 bits = base_flag_idx+1; bit 24 = is_sync.
       Followed by a Pascal-style (u8 length-prefixed) dialogue string.
     seq:
       - id: packed_header
@@ -757,7 +757,7 @@ types:
     instances:
       base_flag_idx:
         value: (packed_header & 0x00ffffff) - 1
-      bool1:
+      is_sync:
         value: (packed_header >> 24) & 1
 
   payload_msgwait:

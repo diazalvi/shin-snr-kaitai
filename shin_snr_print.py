@@ -435,8 +435,8 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
 
     if oc == ShinSnr.OpCode.cmd_msgget:
         text = _str_msg(p.message_str) if p.len_message_str else ""
-        aa   = "  [bool1]" if p.bool1 else ""
-        return f'{name}  flag_base={p.base_flag_idx}{aa}  "{text}"'
+        is_sync = "[sync mode]" if p.is_sync else "[async mode]" 
+        return f'{name}  flag_base={p.base_flag_idx} {is_sync}  "{text}"'
 
     if oc == ShinSnr.OpCode.cmd_msgwait:
         return f"{name}  mode={fmt_operand(p.mode_src)}"
