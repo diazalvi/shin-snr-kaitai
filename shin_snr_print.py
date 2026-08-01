@@ -2,6 +2,13 @@
 """
 shin_snr_print.py — disassemble and print a shin:: SNR script file.
 
+Handles BOTH format variants:
+    * Umineko no Naku Koro ni Chiru PS3   (14 section slots, header 0x58)
+    * Higurashi no Naku Koro ni Sui PS3   (12 section slots, header 0x50)
+
+The variant is detected from the header (off_mask == 0x50 -> Higurashi);
+there is no version field in the file — see the doc block in shin_snr.ksy.
+
 Requires:
     pip install kaitaistruct
 
@@ -159,6 +166,45 @@ def _choices_str(b) -> str:
 
 
 # =============================================================================
+# Version helpers
+# =============================================================================
+
+def is_higu(snr: ShinSnr) -> bool:
+    return bool(snr.is_higurashi)
+
+
+def _enum_name(v):
+    """Return the enum member name if `v` resolved to an enum, else None."""
+    return v.name if hasattr(v, 'name') else None
+
+
+# Higurashi opcode names that mean the same thing as a differently-named
+# Umineko opcode.  Dispatch below uses the Umineko (canonical) spelling; the
+# printed mnemonic always uses the game's own name.
+_HIGU_CANON = {
+    'CMD_MSGSET':  'CMD_MSGGET',
+    'CMD_KEYWAIT': 'CMD_WAITKEY',
+    'CMD_TROPHY':  'CMD_THROPY',
+}
+
+
+def opcode_names(snr: ShinSnr, instr):
+    """
+    Return (display_name, canonical_mnemonic) for an instruction.
+
+    display_name is the game's own opcode name (or UNK_0xNN for a stub slot);
+    canonical_mnemonic is what fmt_instruction dispatches on.
+    """
+    oc = instr.op_higu if is_higu(snr) else instr.op_umi
+    nm = _enum_name(oc)
+    if nm is None:
+        disp = f"UNK_{int(instr.opcode):#04x}"
+        return disp, disp
+    disp = nm.upper()
+    return disp, (_HIGU_CANON.get(disp, disp) if is_higu(snr) else disp)
+
+
+# =============================================================================
 # Formatting helpers
 # =============================================================================
 
@@ -174,11 +220,11 @@ def fmt_operand(op) -> str:
         if op.is_var:
             return f"v{op.var_idx}"
         return f"{op.value}"
-        
+
     # 2. If it's already a string (like a pre-formatted asset name), return it
     if isinstance(op, str):
         return op
-        
+
     # 3. Fallback for raw integers
     if isinstance(op, int):
         try:
@@ -218,7 +264,7 @@ def _mask_name(snr: ShinSnr, idx: int) -> str:
     if isinstance(idx, int):
       sec = snr.mask_section
       return _strz(sec.records[idx].name) if idx < sec.num_records else f"mask#{idx}"
-    else: 
+    else:
       return idx
 
 def fmt_mask(snr: ShinSnr, idx: int) -> str:
@@ -226,7 +272,7 @@ def fmt_mask(snr: ShinSnr, idx: int) -> str:
       idx = idx.value
       sec = snr.mask_section
       return _strz(sec.records[idx].name) if idx < sec.num_records else f"mask#{idx}"
-    else: 
+    else:
       return fmt_operand(idx)
 
 def _pic_name(snr: ShinSnr, idx: int) -> str:
@@ -242,6 +288,8 @@ def _bustup_str(snr: ShinSnr, idx: int) -> str:
 
 def _anime_name(snr: ShinSnr, idx: int) -> str:
     sec = snr.anime_section
+    if sec is None:
+        return f"anime#{idx}"
     return _strz(sec.records[idx].name) if idx < sec.num_records else f"anime#{idx}"
 
 _LAYER_TYPE_NAMES = {1:"TILE", 2:"PICTURE", 3:"BUSTUP", 4:"ANIME", 5:"RAIN", 6:"EFFECT"}
@@ -278,34 +326,36 @@ def _layer_asset(snr: ShinSnr, lt: int, asset_id: int) -> str:
     return f"asset#{asset_id}"
 
 
+def _layer_type_val(op):
+    """Coerce a layer_type operand to a plain int (compiler versions differ)."""
+    raw = op.value_layer_type if hasattr(op, 'value_layer_type') else op
+    return raw.value if hasattr(raw, 'value') else int(raw)
+
+
 # =============================================================================
 # Instruction formatter
 # =============================================================================
 
 def fmt_instruction(snr: ShinSnr, instr) -> str:
-    oc = instr.opcode
-    if hasattr(oc, 'name'):
-        name   = oc.name.upper()
-        oc_val = oc.value
-    else:
-        name   = f"UNK_{int(oc):#04x}"
-        oc_val = int(oc)
+    name, mn = opcode_names(snr, instr)
+    higu = is_higu(snr)
 
     # No-payload opcodes: Kaitai does not create a `payload` attribute for
     # empty switch branches (RET, all scriptTrue stubs, MSGSIGNAL, MSGCLOSE,
-    # WIPEWAIT, LAYERCLEAR, CANVASINIT, SCREENINIT, EVBEGIN, EVEND, AUTOSAVE).
+    # WIPEWAIT, LAYERCLEAR, CANVASINIT, SCREENINIT, EVBEGIN(umi), EVEND,
+    # AUTOSAVE, KAKERA, FAKESELECT).
     p = getattr(instr, 'payload', None)
     if p is None:
         return name
 
     # ── Logic / Memory ────────────────────────────────────────────────────────
-    if oc == ShinSnr.OpCode.op_unary:
+    if mn == 'OP_UNARY':
         op1 = f"  op1={fmt_operand(p.op1)}" if p.mode >= 0x80 else ""
         return f"{name}  mode={p.mode:#04x}  op1={fmt_operand(p.op1)}{op1}"
 
-    if oc == ShinSnr.OpCode.op_alu:
+    if mn == 'OP_ALU':
         dst = fmt_operand(p.dst_var)
-        
+
         # CLR operation
         if p.base_op == 1:
           return f"{name}  {dst} = 0"
@@ -329,32 +379,32 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
             return f"{name}  {dst} = {op1}"
           return f"{name}  {dst} {op_str}= {op1}"
 
-    if oc == ShinSnr.OpCode.op_stack:
+    if mn == 'OP_STACK':
         ops_str = " ".join(
             (f"PUSH {fmt_operand(op.operand)}" if op.op_code == 0 else f"OP({op.op_code})")
             for op in p.ops
         )
         return f"{name}  dst={fmt_operand(p.dst_var)}  [{ops_str}]"
 
-    if oc == ShinSnr.OpCode.set_vars_mult_range:
+    if mn == 'SET_VARS_MULT_RANGE':
         idx_s = ", ".join(fmt_operand(v) for v in p.var_idx)
         return f"{name}  value={fmt_operand(p.value_src)}  vars=[{idx_s}]"
 
-    if oc == ShinSnr.OpCode.set_var_from_array:
+    if mn == 'SET_VAR_FROM_ARRAY':
         tbl = ", ".join(fmt_operand(v) for v in p.table_data)
         return f"{name}  dst={fmt_operand(p.dst_var)}  idx={fmt_operand(p.index_src)}  table=[{tbl}]"
 
-    if oc == ShinSnr.OpCode.set_vars_mult_array:
+    if mn == 'SET_VARS_MULT_ARRAY':
         tbl = ", ".join(fmt_operand(v) for v in p.var_index_table)
         return f"{name}  value={fmt_operand(p.value_src)}  idx={fmt_operand(p.index_src)}  vars=[{tbl}]"
 
     # ── Flow Control ──────────────────────────────────────────────────────────
-    if oc == ShinSnr.OpCode.jmp_cond:
+    if mn == 'JMP_COND':
       op1 = fmt_operand(p.op1)
       op2 = fmt_operand(p.op2)
       base_op = p.mode & 0x7f
       is_inverted = p.mode >= 0x80
-  
+
       # Map C++ logic switch to comparison operators
       op_chars = {
         0: "==",
@@ -364,58 +414,58 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         4: "<=",
         5: "<"
       }
-  
+
       if base_op == 6:
         cond_str = f"({op1} & {op2}) != 0"
       else:
         comp = op_chars.get(base_op, f"?{base_op}?")
         cond_str = f"{op1} {comp} {op2}"
-  
+
       # Bit 7 inverts the final condition result
       if is_inverted:
         cond_str = f"!({cond_str})"
-  
+
       return f"{name}  if {cond_str} -> {p.target_addr:#010x}"
-  
-    if oc in (ShinSnr.OpCode.jmp_abs, ShinSnr.OpCode.call):
+
+    if mn in ('JMP_ABS', 'CALL'):
         return f"{name}  -> {p.target_addr:#010x}"
-  
-    if oc in (ShinSnr.OpCode.switch, ShinSnr.OpCode.switch_call):
+
+    if mn in ('SWITCH', 'SWITCH_CALL'):
         entries = "  ".join(f"[{i}]->{e:#010x}" for i, e in enumerate(p.entries))
         return f"{name}  idx={fmt_operand(p.index_src)}  {entries}"
-  
+
     # ── Utilities ─────────────────────────────────────────────────────────────
-    if oc == ShinSnr.OpCode.rand_range:
+    if mn == 'RAND_RANGE':
         return f"{name}  dst={fmt_operand(p.dst_var)}  range=[{fmt_operand(p.op1)}, {fmt_operand(p.op2)}]"
 
-    if oc == ShinSnr.OpCode.push_mult:
+    if mn == 'PUSH_MULT':
         ops = ", ".join(fmt_operand(v) for v in p.operands)
         return f"{name}  [{ops}]"
 
-    if oc == ShinSnr.OpCode.pop_mult:
+    if mn == 'POP_MULT':
         vs = ", ".join(fmt_operand(v) for v in p.var_idx)
         return f"{name}  [{vs}]"
 
     # ── System / Message / Scene ──────────────────────────────────────────────
-    if oc == ShinSnr.OpCode.cmd_exit:
+    if mn == 'CMD_EXIT':
         return f"{name}  code={fmt_operand(p.exit_code_src)}"
 
-    if oc == ShinSnr.OpCode.cmd_sget:
+    if mn == 'CMD_SGET':
         # dst_var_raw is always a variable reference; apply the same encodeVariableRef
         # bias (+0x8000) that the engine uses so we display it as v<idx>.
         dst = f"v{p.dst_var_raw + 0x8000}"
         return f"{name}  dst={dst}  flag={fmt_operand(p.flag_id_src)}"
 
-    if oc == ShinSnr.OpCode.cmd_sset:
+    if mn == 'CMD_SSET':
         return f"{name}  value={fmt_operand(p.value_src)}  flag={fmt_operand(p.flag_id_src)}"
 
-    if oc == ShinSnr.OpCode.cmd_wait:
+    if mn == 'CMD_WAIT':
         return f"{name}  duration={fmt_operand(p.duration_src)}"
 
-    if oc == ShinSnr.OpCode.cmd_waitkey:
+    if mn == 'CMD_WAITKEY':
         return f"{name}  mode={fmt_operand(p.mode_src)}"
 
-    if oc == ShinSnr.OpCode.cmd_msginit:
+    if mn == 'CMD_MSGINIT':
         if hasattr(p.msg_style, 'is_var') and p.msg_style.is_var:
             style_str = f"v{p.msg_style.var_idx}"
         else:
@@ -433,21 +483,24 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
                 just_str = fmt_operand(just)
         return f"{name}  style={style_str}  justify={just_str}"
 
-    if oc == ShinSnr.OpCode.cmd_msgget:
+    if mn == 'CMD_MSGGET':
         text = _str_msg(p.message_str) if p.len_message_str else ""
-        is_sync = "[sync mode]" if p.is_sync else "[async mode]" 
+        is_sync = "[sync mode]" if p.is_sync else "[async mode]"
         return f'{name}  flag_base={p.base_flag_idx} {is_sync}  "{text}"'
 
-    if oc == ShinSnr.OpCode.cmd_msgwait:
+    if mn == 'CMD_MSGWAIT':
         return f"{name}  mode={fmt_operand(p.mode_src)}"
 
-    if oc == ShinSnr.OpCode.cmd_msgcheck:
+    if mn == 'CMD_MSGCHECK':
         return f"{name}  flag_base={p.base_flag_idx}"
 
-    if oc == ShinSnr.OpCode.cmd_logset:
+    if mn == 'CMD_MSGQUAKE':
+        return f"{name}  op1={fmt_operand(p.op1)}"
+
+    if mn == 'CMD_LOGSET':
         return f'{name}  "{_str_msg(p.log_str)}"'
 
-    if oc == ShinSnr.OpCode.cmd_select:
+    if mn == 'CMD_SELECT':
         title   = _str_msg(p.title_str) if p.len_title_str else ""
         choices = _choices_str(p.choices) if p.len_choices else ""
         vm = p.visibility_bitmask
@@ -457,99 +510,143 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
                 f'  visible={visible}'
                 f'  title="{title}"  choices=[{choices}]')
 
-    if oc == ShinSnr.OpCode.cmd_wipe:
-        parts = [f"bitmask={p.bitmask:#04x}"]
-        if p.bitmask & 0x01: parts.append(f"mask={fmt_mask(snr, p.mask_snr_id)}")
-        if p.bitmask & 0x02: parts.append(f"duration={fmt_operand(p.duration_ticks)}")
-        if p.bitmask & 0x04: parts.append(f"height={fmt_operand(p.wipe_height)}")
-        if p.bitmask & 0x08: parts.append(f"dir={fmt_operand(p.direction_flags)}")
+    if mn == 'CMD_WIPE':
+        # Higurashi has an extra leading `mode` byte, and when mode != 0 only
+        # bit 0 of the bitmask gates an operand word (see payload_wipe_higu).
+        gated = (not higu) or p.mode == 0
+        parts = []
+        if higu:
+            parts.append(f"mode={p.mode:#04x}")
+        parts.append(f"bitmask={p.bitmask:#04x}")
+        if p.bitmask & 0x01:          parts.append(f"mask={fmt_mask(snr, p.mask_snr_id)}")
+        if gated and p.bitmask & 0x02: parts.append(f"duration={fmt_operand(p.duration_ticks)}")
+        if gated and p.bitmask & 0x04: parts.append(f"height={fmt_operand(p.wipe_height)}")
+        if gated and p.bitmask & 0x08: parts.append(f"dir={fmt_operand(p.direction_flags)}")
         if p.wait_for_completion: parts.append("[wait]")
         return f"{name}  " + "  ".join(parts)
 
     # ── Audio ─────────────────────────────────────────────────────────────────
-    if oc == ShinSnr.OpCode.cmd_bgmplay:
+    if mn == 'CMD_BGMPLAY':
         return (f"{name}  [{fmt_operand(p.song_id)}] {_bgm_name(snr, p.song_id.value)}"
                 f"  loop={fmt_operand(p.loop_num_records)}  vol={_vol(p.volume_raw.value)}"
                 f"  fade={fmt_operand(p.fade_duration)}")
 
-    if oc == ShinSnr.OpCode.cmd_bgmstop:
+    if mn == 'CMD_BGMSTOP':
         return f"{name}  fade={fmt_operand(p.fade_duration)}"
 
-    if oc == ShinSnr.OpCode.cmd_bgmvol:
+    if mn == 'CMD_BGMVOL':
         return f"{name}  vol={_vol(p.volume_raw.value)}  fade={fmt_operand(p.fade_duration)}"
 
-
-    if oc == ShinSnr.OpCode.cmd_bgmwait:
+    if mn == 'CMD_BGMWAIT':
         return f"{name}  duration={fmt_operand(p.duration_src)}"
 
-    if oc == ShinSnr.OpCode.cmd_seplay:
+    if mn == 'CMD_SEPLAY':
         return (f"{name}  stream={fmt_operand(p.stream_id)}  [{fmt_operand(p.se_id)}] {_sebg_name(snr, p.se_id.value)}"
                 f"  loop={fmt_operand(p.loop_num_records)}  vol={_vol(p.volume_raw.value)}"
                 f"  fade={fmt_operand(p.fade_duration)}")
 
-    if oc == ShinSnr.OpCode.cmd_sestop:
+    if mn == 'CMD_SESTOP':
         return f"{name}  stream={fmt_operand(p.stream_id)} fade={fmt_operand(p.fade_duration)}"
 
-    if oc == ShinSnr.OpCode.cmd_sestopall:
+    if mn == 'CMD_SESTOPALL':
         return f"{name}  fade={fmt_operand(p.fade_duration)}"
 
-    if oc == ShinSnr.OpCode.cmd_sevol:
+    if mn == 'CMD_SEVOL':
         return f"{name}  stream={fmt_operand(p.stream_id)}  vol={_vol(p.volume_raw.value)}  fade={fmt_operand(p.fade_duration)}"
 
-    if oc == ShinSnr.OpCode.cmd_sewait:
+    if mn == 'CMD_SEWAIT':
         return f"{name}  stream={fmt_operand(p.stream_id)}  preload={fmt_operand(p.do_preload)}"
 
-    if oc == ShinSnr.OpCode.cmd_seonce:
+    if mn == 'CMD_SEONCE':
         return (f"{name}  [{fmt_operand(p.sound_effect_id)}] {_sebg_name(snr, p.sound_effect_id.value)}"
                 f"  vol={_vol(p.volume_raw.value)}  preload={fmt_operand(p.do_preload)}")
 
-    if oc == ShinSnr.OpCode.cmd_vibrate:
+    if mn == 'CMD_VIBRATE':
         return f"{name}  intensity={fmt_operand(p.vibration_intensity)}  ticks={fmt_operand(p.duration_ticks)}"
 
     # ── Misc ──────────────────────────────────────────────────────────────────
-    if oc == ShinSnr.OpCode.cmd_saveinfo:
+    if mn == 'CMD_SAVEINFO':
+        if higu:
+            return f'{name}  type={fmt_operand(p.type)}  "{_str_msg(p.saveinfo_str)}"'
         return f'{name}  type={p.type}  "{_str_msg(p.saveinfo_str)}"'
 
-    if oc == ShinSnr.OpCode.cmd_movie:
+    if mn == 'CMD_MOVIE':
         return f"{name}  [{p.movie_id}] {_movie_name(snr, p.movie_id)}"
 
-    if oc == ShinSnr.OpCode.cmd_bgmsync:
+    if mn == 'CMD_BGMSYNC':
         return f"{name}  threshold={p.threshold_duration}"
 
-    if oc == ShinSnr.OpCode.cmd_bgmplay2:
+    if mn == 'CMD_EVBEGIN':
+        # Higurashi only — Umineko's EVBEGIN has no payload and returned above.
+        return f"{name}  event={fmt_operand(p.event_id)}"
+
+    if mn == 'CMD_BGMPLAY2':
         return (f"{name}  new=[{p.new_song_id}] {_bgm_name(snr, p.new_song_id)}"
                 f"  old=[{p.old_song_id}] {_bgm_name(snr, p.old_song_id)}"
                 f"  loop={fmt_operand(p.loop_num_records)}  vol={_vol(p.volume_raw)}"
                 f"  crossfade={p.crossfade_delay}")
 
-    if oc == ShinSnr.OpCode.cmd_bgmvol2:
+    if mn == 'CMD_BGMVOL2':
         return f"{name}  vol={_vol(p.volume_raw.value)}  fade={fmt_operand(p.fade_duration)}"
 
-    if oc == ShinSnr.OpCode.cmd_voiceplay:
+    if mn == 'CMD_VOICEPLAY':
+        if higu:
+            return (f'{name}  "{_strz(p.path)}"  vol={fmt_operand(p.volume_raw)}'
+                    f"  flag={fmt_operand(p.flag)}")
         return (f"{name}  stream={p.stream_id}  [{p.voice_id}] {_voice_name(snr, p.voice_id)}"
                 f"  loop={fmt_operand(p.loop_num_records)}  vol={_vol(p.volume_raw)}"
                 f"  fade={p.fade_duration}")
 
-    if oc == ShinSnr.OpCode.cmd_voicewait:
+    if mn == 'CMD_VOICEWAIT':
         return f"{name}  wait_flags={p.wait_flags.value:#06x}"
 
-    if oc == ShinSnr.OpCode.cmd_tipsget:
+    if mn == 'CMD_TIPSGET':
         ids = ", ".join(str(fmt_operand(v)) for v in p.operands)
         return f"{name} .num_operands={p.num_operands}  ids=[{ids}]"
 
+    # ── Higurashi-only commands ───────────────────────────────────────────────
+    if mn == 'CMD_CHARSEL':
+        return (f"{name}  flag_base={p.flag_base_id}  dst=v{p.dst_var_idx}"
+                f"  unused={p.unused:#06x}  op1={fmt_operand(p.op1)}")
+
+    if mn == 'CMD_OTSUGET':
+        return f"{name}  op1={fmt_operand(p.op1)}"
+
+    if mn == 'CMD_CHART':
+        ids = ", ".join(fmt_operand(v) for v in p.operands)
+        return f"{name}  kind={p.chart_kind}  ids=[{ids}]"
+
+    if mn == 'CMD_SNRSEL':
+        return f"{name}  scenario={fmt_operand(p.op1)}"
+
+    if mn == 'CMD_KAKERAGET':
+        ids = ", ".join(fmt_operand(v) for v in p.operands)
+        return f"{name}  op1={fmt_operand(p.op1)}  ids=[{ids}]"
+
+    if mn == 'CMD_QUIZ':
+        return (f"{name}  dst=v{p.dst_var_idx}  op1={fmt_operand(p.op1)}"
+                f"  op2={fmt_operand(p.op2)}  op3={fmt_operand(p.op3)}")
+
     # ── Layer / Canvas / Screen ───────────────────────────────────────────────
-    if oc == ShinSnr.OpCode.cmd_thropy:
+    if mn == 'CMD_THROPY':
         return f"{name}  id={fmt_operand(p.thropy_id)}"
 
-    if oc == ShinSnr.OpCode.cmd_char:
+    if mn == 'CMD_CHAR':
         return f"{name}  char_tree_snapshot={fmt_operand(p.char_tree_snapshot)}  starting_page={fmt_operand(p.starting_page)}"
 
-    if oc == ShinSnr.OpCode.cmd_layerload:
-        lt_val = p.layer_type.value_layer_type if hasattr(p.layer_type, 'value_layer_type') else int(p.layer_type)
+    if mn == 'CMD_LAYERLOAD':
+        lt_val = _layer_type_val(p.layer_type)
         lt_str = _LAYER_TYPE_NAMES.get(lt_val, f"type={lt_val}")
-        parts  = [f"layer={fmt_operand(p.layer_id)}", lt_str, f"field_mask={p.field_mask:#04x}"]
+        parts  = [f"layer={fmt_operand(p.layer_id)}", lt_str]
+        if higu:
+            parts.append(f"extra={fmt_operand(p.extra)}")
+        parts.append(f"field_mask={p.field_mask:#04x}")
         if p.field_mask & 0x01:
-            parts.append(f"asset=[{fmt_operand(p.asset_id)}] {_layer_asset(snr, lt_val, p.asset_id.value)}")
+            if p.asset_id.is_var:
+                # asset id comes from a script variable — nothing to resolve
+                parts.append(f"asset=[{fmt_operand(p.asset_id)}]")
+            else:
+                parts.append(f"asset=[{fmt_operand(p.asset_id)}] {_layer_asset(snr, lt_val, p.asset_id.value)}")
         if p.field_mask & 0x02: parts.append(f"paramb={fmt_operand(p.paramb)}")
         if p.field_mask & 0x04: parts.append(f"w={fmt_operand(p.width)}")
         if p.field_mask & 0x08: parts.append(f"h={fmt_operand(p.height)}")
@@ -559,7 +656,7 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
         if p.field_mask & 0x80: parts.append(f"paramd={fmt_operand(p.paramd)}")
         return f"{name}  " + "  ".join(parts)
 
-    if oc == ShinSnr.OpCode.cmd_layerctrl:
+    if mn == 'CMD_LAYERCTRL':
         parts = [f"layer={fmt_operand(p.layer_id)}", f"anim={fmt_anim_type(p.anim_type)}", f"mask={p.field_mask:#04x}"]
         for i, (bit, attr) in enumerate([
                 (0x01,'end_value'),(0x02,'duration_or_step'),(0x04,'mode_and_easing'),(0x08,'height'),
@@ -568,16 +665,16 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
                 parts.append(f"{attr}={fmt_operand(getattr(p, attr))}")
         return f"{name}  " + "  ".join(parts)
 
-    if oc == ShinSnr.OpCode.cmd_layerwait:
+    if mn == 'CMD_LAYERWAIT':
         return f"{name}  layer={fmt_operand(p.layer_id)}  anim_type={fmt_wait_anim_type(p.anim_type)}"
 
-    if oc == ShinSnr.OpCode.cmd_maskload:
+    if mn == 'CMD_MASKLOAD':
         return f"{name}  [{fmt_operand(p.mask_id)}] {_mask_name(snr, p.mask_id.value)}  bool1={fmt_operand(p.bool1)}"
 
-    if oc == ShinSnr.OpCode.cmd_canvas:
+    if mn == 'CMD_CANVAS':
         return f"{name}  canvas_id={fmt_operand(p.canvas_id)}"
 
-    if oc == ShinSnr.OpCode.cmd_canvasctrl:
+    if mn == 'CMD_CANVASCTRL':
         parts = [f"anim={fmt_anim_type(p.anim_type)}", f"mask={p.field_mask:#04x}"]
         for i, (bit, attr) in enumerate([
                 (0x01,'param0'),(0x02,'param1'),(0x04,'param2'),(0x08,'param3'),
@@ -586,10 +683,10 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
                 parts.append(f"p{i}={fmt_operand(getattr(p, attr))}")
         return f"{name}  " + "  ".join(parts)
 
-    if oc == ShinSnr.OpCode.cmd_canvaswait:
+    if mn == 'CMD_CANVASWAIT':
         return f"{name}  anim={fmt_wait_anim_type(p.anim_type)}"
 
-    if oc == ShinSnr.OpCode.cmd_screenctr:
+    if mn == 'CMD_SCREENCTR':
         parts = [f"anim={fmt_anim_type(p.anim_type)}", f"mask={p.field_mask:#04x}"]
         for i, (bit, attr) in enumerate([
                 (0x01,'param0'),(0x02,'param1'),(0x04,'param2'),(0x08,'param3'),
@@ -598,23 +695,27 @@ def fmt_instruction(snr: ShinSnr, instr) -> str:
                 parts.append(f"p{i}={fmt_operand(getattr(p, attr))}")
         return f"{name}  " + "  ".join(parts)
 
-    if oc == ShinSnr.OpCode.cmd_screenwait:
+    if mn == 'CMD_SCREENWAIT':
         return f"{name}  anim={fmt_wait_anim_type(p.anim_type)}"
 
     # ── Debug / Utility ───────────────────────────────────────────────────────
-    if oc == ShinSnr.OpCode.cmd_msgbox:
+    if mn == 'CMD_MSGBOX':
         return f'{name}  "{_str_msg(p.message)}"'
 
-    if oc == ShinSnr.OpCode.cmd_snapshot:
+    if mn == 'CMD_SNAPSHOT':
         return f'{name}  "{_strz(p.filename_base)}"  index={fmt_operand(p.index)}'
 
     # Fallback
-    return f"{name}  (payload={type(p).__name__}  opcode={oc_val:#04x})"
+    return f"{name}  (payload={type(p).__name__}  opcode={int(instr.opcode):#04x})"
 
 
 # =============================================================================
 # Asset table printer
 # =============================================================================
+
+_CHART_NODE_NAMES = {0:"GROUP", 1:"TITLED_BOX", 2:"ICON_BOX",
+                     3:"VLINE", 4:"HLINE", 5:"PAGE_MARKER"}
+
 
 def print_asset_tables(snr: ShinSnr) -> None:
     def section(title: str):
@@ -654,11 +755,15 @@ def print_asset_tables(snr: ShinSnr) -> None:
 
     section("Bustup")
     for i, r in enumerate(snr.bustup_section.records):
-        print(f"[{i:4d}]  {_strz(r.name):<26}  emotion={_strz(r.emotion)}")
+        if is_higu(snr):
+            print(f"[{i:4d}]  {_strz(r.name):<26}  emotion={_strz(r.emotion):<18}  char_id={r.char_id}")
+        else:
+            print(f"[{i:4d}]  {_strz(r.name):<26}  emotion={_strz(r.emotion)}")
 
-    section("Anime")
-    for i, r in enumerate(snr.anime_section.records):
-        print(f"  [{i:4d}]  {_strz(r.name)}")
+    if not is_higu(snr):
+        section("Anime")
+        for i, r in enumerate(snr.anime_section.records):
+            print(f"  [{i:4d}]  {_strz(r.name)}")
 
     section("CG Gallery (Picturebox)")
     for i, r in enumerate(snr.picturebox_section.cg_entries):
@@ -672,7 +777,36 @@ def print_asset_tables(snr: ShinSnr) -> None:
                     nid = snr.pic_section.records[nid].next_id
             parts.append(" -> ".join(chain))
         pics_str = "  |  ".join(parts)
-        print(f"  [cg {i:3d}]  type={r.type}  {pics_str}")
+        if is_higu(snr):
+            print(f"  [cg {i:3d}]  bonus={int(r.is_bonus)}  {pics_str}")
+        else:
+            print(f"  [cg {i:3d}]  type={r.type}  {pics_str}")
+
+    if is_higu(snr):
+        section("Music Box")
+        for i, r in enumerate(snr.musicbox_section.records):
+            print(f"  [{i:4d}]  bgm=[{r.bgm_id}] {_bgm_name(snr, r.bgm_id)}"
+                  f"  title=sheet{r.title_sheet}/row{r.title_row}  flags={r.flags}")
+
+        section("Tips")
+        for i, r in enumerate(snr.tips_section.tips):
+            print(f"  [{i:4d}]  title=sheet{r.title_sheet}/row{r.title_row}"
+                  f"  txa=\"{_strz(r.txa_path)}\"")
+
+        section("Chart (episode flowchart)")
+        for i, n in enumerate(snr.chart_section.payload.nodes):
+            nt = n.node_type.value if hasattr(n.node_type, 'value') else int(n.node_type)
+            label = _CHART_NODE_NAMES.get(nt, f"TYPE_{nt}")
+            if nt == 1:
+                print(f"  [{i:5d}]  {label:<11}  grid=({n.grid_x:4d},{n.grid_y:4d})"
+                      f"  scene={n.body.scene_id:5d}  colour={n.body.colour}"
+                      f"  \"{_strz(n.body.title)}\"")
+            elif nt == 2:
+                print(f"  [{i:5d}]  {label:<11}  grid=({n.grid_x:4d},{n.grid_y:4d})"
+                      f"  icon=row{n.body.icon_row}/col{n.body.icon_col}")
+            else:
+                print(f"  [{i:5d}]  {label:<11}  grid=({n.grid_x:4d},{n.grid_y:4d})"
+                      f"  param={n.body.param}")
 
 
 # =============================================================================
@@ -695,8 +829,12 @@ def main():
         data = fh.read()
 
     snr = ShinSnr.from_bytes(data)
+    higu = is_higu(snr)
 
     print(f"SNR file      : {path}  ({len(data)} bytes)")
+    if higu:
+        print(f"format        : higurashi (header 0x{snr.header.header_size:02x}, "
+              f"{snr.header.num_slots + 2} section slots)")
     print(f"bytecode off  : {snr.header.off_bytecode:#010x}")
     print(f"sjis decode   : {'on (half-width kana expanded)' if _DECODE_SJIS else 'off (raw)'}")
     print(f"BGM tracks    : {snr.bgm_section.num_records}")
@@ -706,8 +844,13 @@ def main():
     print(f"Masks         : {snr.mask_section.num_records}")
     print(f"Pictures      : {snr.pic_section.num_records}")
     print(f"Bustup sprites: {snr.bustup_section.num_records}")
-    print(f"Anime clips   : {snr.anime_section.num_records}")
+    if not higu:
+        print(f"Anime clips   : {snr.anime_section.num_records}")
     print(f"CG gallery     : {snr.picturebox_section.num_cg_entries}")
+    if higu:
+        print(f"Music box     : {snr.musicbox_section.num_records}")
+        print(f"Tips entries  : {snr.tips_section.num_tips}")
+        print(f"Chart nodes   : {len(snr.chart_section.payload.nodes)}")
 
     if show_assets:
         print_asset_tables(snr)
